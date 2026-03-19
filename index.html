@@ -1,0 +1,2457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aurum Capital – Smart Gold & Stock Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Cormorant+Garamond:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ========== CSS VARIABLES ========== */
+:root {
+  --bg-deep:   #04090F;
+  --bg-dark:   #080F1A;
+  --bg-mid:    #0C1829;
+  --primary:   #0B3D91;
+  --primary-l: #1456C8;
+  --gold:      #FFD700;
+  --gold-d:    #C9A84C;
+  --gold-dim:  rgba(255,215,0,0.12);
+  --gold-b:    rgba(255,215,0,0.3);
+  --text:      #E2E8F5;
+  --text-dim:  #7A90B4;
+  --text-muted:#4A5E80;
+  --success:   #22C55E;
+  --danger:    #EF4444;
+  --warn:      #F59E0B;
+  --surface:   rgba(11,61,145,0.12);
+  --surface2:  rgba(11,61,145,0.22);
+  --border:    rgba(255,215,0,0.15);
+  --border2:   rgba(255,215,0,0.08);
+  --radius:    12px;
+  --radius-sm: 8px;
+  --shadow:    0 4px 32px rgba(0,0,0,0.6);
+  --glow:      0 0 24px rgba(255,215,0,0.18);
+}
+
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Cormorant Garamond', serif;
+  background: var(--bg-deep);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(11,61,145,0.25) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 80% 80%, rgba(201,168,76,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+#app { position: relative; z-index: 1; }
+h1,h2,h3,h4 { font-family: 'Playfair Display', serif; color: var(--text); }
+a { color: var(--gold); text-decoration: none; }
+input, select, textarea { font-family: 'Cormorant Garamond', serif; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--gold-d); border-radius: 4px; }
+
+/* ========== TOAST NOTIFICATIONS ========== */
+#toast-container {
+  position: fixed; top: 24px; right: 24px; z-index: 9999;
+  display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px; border-radius: var(--radius-sm);
+  background: var(--bg-mid); border: 1px solid var(--border);
+  box-shadow: var(--shadow); font-size: 15px; font-weight: 500;
+  min-width: 280px; pointer-events: all;
+  animation: toastIn 0.3s ease;
+}
+.toast.success { border-color: rgba(34,197,94,0.4); }
+.toast.error   { border-color: rgba(239,68,68,0.4); }
+.toast.warn    { border-color: rgba(245,158,11,0.4); }
+.toast-icon { font-size: 18px; }
+@keyframes toastIn { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: none; } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; transform: translateX(40px); } }
+
+/* ========== SIDEBAR ========== */
+#sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0;
+  width: 240px; background: var(--bg-mid);
+  border-right: 1px solid var(--border2);
+  display: flex; flex-direction: column;
+  z-index: 100; transition: transform 0.3s;
+}
+.sidebar-logo {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid var(--border2);
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+}
+.sidebar-logo svg { flex-shrink: 0; }
+.sidebar-logo-text { line-height: 1.1; }
+.sidebar-logo-text .brand { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--gold); letter-spacing: 0.04em; }
+.sidebar-logo-text .tagline { font-size: 10px; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; }
+.sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+.nav-section-title { font-size: 10px; color: var(--text-muted); letter-spacing: 0.15em; text-transform: uppercase; padding: 8px 12px 6px; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  color: var(--text-dim); font-size: 15px; cursor: pointer;
+  transition: all 0.2s; margin-bottom: 2px; position: relative;
+}
+.nav-item:hover { background: var(--gold-dim); color: var(--text); }
+.nav-item.active { background: var(--gold-dim); color: var(--gold); }
+.nav-item.active::before {
+  content: ''; position: absolute; left: 0; top: 20%; bottom: 20%;
+  width: 3px; background: var(--gold); border-radius: 0 2px 2px 0;
+}
+.nav-item .nav-icon { font-size: 18px; width: 22px; text-align: center; }
+.nav-badge {
+  margin-left: auto; background: var(--danger);
+  color: #fff; font-size: 10px; padding: 1px 6px;
+  border-radius: 10px; font-family: 'JetBrains Mono', monospace;
+}
+.sidebar-footer {
+  padding: 16px 12px; border-top: 1px solid var(--border2);
+}
+.sidebar-user {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: background 0.2s;
+}
+.sidebar-user:hover { background: var(--surface); }
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--gold-d));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-size: 14px; color: #fff;
+  border: 2px solid var(--gold-b); flex-shrink: 0;
+}
+.user-info .user-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.user-info .user-role { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.logout-btn {
+  margin-top: 8px; width: 100%;
+  background: transparent; border: 1px solid rgba(239,68,68,0.3);
+  color: #EF4444; padding: 8px; border-radius: var(--radius-sm);
+  cursor: pointer; font-family: 'Cormorant Garamond', serif; font-size: 14px;
+  transition: all 0.2s;
+}
+.logout-btn:hover { background: rgba(239,68,68,0.1); }
+
+/* ========== MAIN LAYOUT ========== */
+.main-content {
+  margin-left: 240px;
+  min-height: 100vh;
+  padding: 32px 36px;
+}
+.page-header {
+  margin-bottom: 28px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.page-title { font-size: 28px; color: var(--text); }
+.page-subtitle { font-size: 15px; color: var(--text-dim); margin-top: 4px; }
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity:1; transform: none; } }
+
+/* ========== CARDS ========== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,215,0,0.03) 0%, transparent 60%);
+  pointer-events: none;
+}
+.card-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--text-dim); margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+.card-value { font-family: 'JetBrains Mono', monospace; font-size: 28px; color: var(--text); font-weight: 500; }
+.card-change { font-size: 13px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.card-change.up { color: var(--success); }
+.card-change.down { color: var(--danger); }
+
+/* ========== GRID LAYOUTS ========== */
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; }
+.grid-12 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+.grid-21 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+/* ========== BUTTONS ========== */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: var(--radius-sm);
+  font-family: 'Cormorant Garamond', serif; font-size: 15px; font-weight: 600;
+  cursor: pointer; border: none; transition: all 0.2s; letter-spacing: 0.04em;
+}
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), var(--gold-d));
+  color: var(--bg-deep);
+}
+.btn-gold:hover { box-shadow: 0 0 20px rgba(255,215,0,0.4); transform: translateY(-1px); }
+.btn-outline {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.btn-outline:hover { border-color: var(--gold-b); color: var(--gold); }
+.btn-buy {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff; width: 100%; justify-content: center; padding: 12px;
+}
+.btn-buy:hover { box-shadow: 0 0 20px rgba(22,163,74,0.4); }
+.btn-sell {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #fff; width: 100%; justify-content: center; padding: 12px;
+}
+.btn-sell:hover { box-shadow: 0 0 20px rgba(220,38,38,0.4); }
+.btn-sm { padding: 6px 14px; font-size: 13px; }
+.btn-danger { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #EF4444; }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+/* ========== FORM ELEMENTS ========== */
+.form-group { margin-bottom: 18px; }
+.form-label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 8px; letter-spacing: 0.06em; text-transform: uppercase; }
+.form-input {
+  width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 16px;
+  color: var(--text); font-size: 16px; transition: border-color 0.2s;
+  outline: none;
+}
+.form-input:focus { border-color: var(--gold-b); box-shadow: 0 0 0 3px rgba(255,215,0,0.08); }
+.form-input::placeholder { color: var(--text-muted); }
+.form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFD700' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+/* ========== TABLES ========== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th {
+  font-family: 'Cormorant Garamond', serif; font-weight: 600;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-muted); padding: 12px 16px; text-align: left;
+  border-bottom: 1px solid var(--border2);
+}
+td { padding: 13px 16px; border-bottom: 1px solid rgba(255,215,0,0.04); color: var(--text-dim); vertical-align: middle; }
+tr:hover td { background: rgba(255,215,0,0.03); }
+tr:last-child td { border-bottom: none; }
+.td-mono { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+/* ========== BADGES ========== */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+}
+.badge-success { background: rgba(34,197,94,0.15); color: #22C55E; border: 1px solid rgba(34,197,94,0.25); }
+.badge-danger  { background: rgba(239,68,68,0.15);  color: #EF4444; border: 1px solid rgba(239,68,68,0.25); }
+.badge-warn    { background: rgba(245,158,11,0.15); color: #F59E0B; border: 1px solid rgba(245,158,11,0.25); }
+.badge-info    { background: rgba(59,130,246,0.15); color: #60A5FA; border: 1px solid rgba(59,130,246,0.25); }
+.badge-gold    { background: rgba(255,215,0,0.15);  color: var(--gold); border: 1px solid rgba(255,215,0,0.25); }
+
+/* ========== TICKER BAR ========== */
+#ticker-bar {
+  position: fixed; top: 0; left: 240px; right: 0;
+  height: 36px; background: rgba(4,9,15,0.92);
+  border-bottom: 1px solid var(--border2);
+  z-index: 99; display: flex; align-items: center;
+  overflow: hidden;
+}
+.ticker-track {
+  display: flex; gap: 40px; white-space: nowrap;
+  animation: ticker 40s linear infinite;
+}
+.ticker-item {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+}
+.ticker-sym { color: var(--gold); font-weight: 500; }
+.ticker-price { color: var(--text); }
+.ticker-chg.up { color: var(--success); }
+.ticker-chg.dn { color: var(--danger); }
+@keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+.main-content { padding-top: 68px; }
+
+/* ========== LOGIN PAGE ========== */
+#page-auth {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 40px;
+}
+.auth-container {
+  display: grid; grid-template-columns: 1fr 1fr;
+  max-width: 960px; width: 100%;
+  background: var(--bg-mid); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden; box-shadow: var(--shadow);
+}
+.auth-hero {
+  background: linear-gradient(160deg, #0B3D91 0%, #050E1A 100%);
+  padding: 52px 44px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.auth-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 80% at 50% 20%, rgba(255,215,0,0.12) 0%, transparent 70%);
+}
+.auth-hero-content { position: relative; z-index: 1; }
+.hero-logo { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; }
+.hero-logo-text .brand { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--gold); }
+.hero-logo-text .tagline { font-size: 11px; color: rgba(255,215,0,0.6); letter-spacing: 0.18em; text-transform: uppercase; }
+.auth-hero h2 { font-size: 32px; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+.auth-hero p { font-size: 16px; color: rgba(255,255,255,0.6); line-height: 1.7; }
+.auth-hero-features { margin-top: 40px; display: flex; flex-direction: column; gap: 14px; }
+.feature-item { display: flex; align-items: center; gap: 12px; font-size: 14px; color: rgba(255,255,255,0.7); }
+.feature-icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,215,0,0.15); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.auth-hero-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-top: auto; position: relative; z-index:1;
+}
+.auth-stat { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,215,0,0.2); border-radius: var(--radius-sm); padding: 14px 16px; }
+.auth-stat-val { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold); }
+.auth-stat-lbl { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+.auth-form { padding: 52px 44px; display: flex; flex-direction: column; justify-content: center; }
+.auth-tabs { display: flex; gap: 0; margin-bottom: 32px; border-bottom: 1px solid var(--border2); }
+.auth-tab {
+  flex: 1; text-align: center; padding: 12px;
+  color: var(--text-muted); cursor: pointer; font-size: 15px; font-weight: 600;
+  border-bottom: 2px solid transparent; transition: all 0.2s; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.auth-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.auth-form-section { display: none; }
+.auth-form-section.active { display: block; animation: fadeIn 0.3s; }
+.auth-submit {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-d));
+  color: var(--bg-deep); border: none; border-radius: var(--radius-sm);
+  font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; letter-spacing: 0.06em;
+  margin-top: 8px;
+}
+.auth-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,215,0,0.3); }
+.demo-credentials {
+  margin-top: 20px; padding: 14px 16px;
+  background: rgba(255,215,0,0.06); border: 1px solid rgba(255,215,0,0.15);
+  border-radius: var(--radius-sm); font-size: 13px;
+}
+.demo-credentials p { color: var(--text-dim); margin-bottom: 6px; }
+.demo-credentials code { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 12px; }
+
+/* ========== PRICE CARDS ========== */
+.price-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px;
+  position: relative; overflow: hidden;
+}
+.price-card::after {
+  content: ''; position: absolute; top: 0; right: 0;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(255,215,0,0.1), transparent);
+  pointer-events: none;
+}
+.price-asset-name { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 6px; }
+.price-value { font-family: 'JetBrains Mono', monospace; font-size: 26px; color: var(--text); }
+.price-change { font-family: 'JetBrains Mono', monospace; font-size: 13px; margin-top: 4px; }
+.price-change.pos { color: var(--success); }
+.price-change.neg { color: var(--danger); }
+
+/* ========== CHART CONTAINERS ========== */
+.chart-container { position: relative; width: 100%; }
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.chart-title { font-family: 'Playfair Display', serif; font-size: 17px; color: var(--text); }
+.chart-tabs { display: flex; gap: 4px; }
+.chart-tab {
+  padding: 4px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  color: var(--text-muted); transition: all 0.2s; font-family: 'JetBrains Mono', monospace;
+}
+.chart-tab.active { background: var(--gold-dim); color: var(--gold); }
+
+/* ========== STOCK CARDS ========== */
+.stock-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 18px 20px;
+  cursor: pointer; transition: all 0.2s;
+}
+.stock-card:hover { border-color: var(--gold-b); background: var(--surface2); transform: translateY(-2px); }
+.stock-card.selected { border-color: var(--gold); background: var(--surface2); }
+.stock-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.stock-sym { font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--gold); font-weight: 500; }
+.stock-name { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.stock-price { font-family: 'JetBrains Mono', monospace; font-size: 17px; color: var(--text); }
+.stock-chg { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.mini-chart { height: 40px; }
+
+/* ========== TRADE PANEL ========== */
+.trade-panel {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+}
+.trade-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.trade-tab {
+  flex: 1; padding: 10px; text-align: center; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 15px; font-weight: 600;
+  border: 1px solid transparent; transition: all 0.2s;
+}
+.trade-tab.buy { color: var(--success); border-color: rgba(34,197,94,0.3); }
+.trade-tab.buy.active { background: rgba(34,197,94,0.15); border-color: var(--success); }
+.trade-tab.sell { color: var(--danger); border-color: rgba(239,68,68,0.3); }
+.trade-tab.sell.active { background: rgba(239,68,68,0.15); border-color: var(--danger); }
+.trade-summary {
+  background: rgba(0,0,0,0.2); border-radius: var(--radius-sm);
+  padding: 12px 16px; margin: 16px 0; font-size: 14px;
+}
+.trade-row { display: flex; justify-content: space-between; padding: 4px 0; }
+.trade-row .label { color: var(--text-muted); }
+.trade-row .value { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+/* ========== PORTFOLIO ========== */
+.holding-row { background: var(--surface); border-bottom: 1px solid var(--border2); }
+.pnl-pos { color: var(--success); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+.pnl-neg { color: var(--danger); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+/* ========== SECURITY ========== */
+.attack-card {
+  background: var(--surface); border: 1px solid rgba(239,68,68,0.2);
+  border-radius: var(--radius); padding: 16px 20px;
+  margin-bottom: 10px; display: flex; align-items: flex-start; gap: 16px;
+}
+.attack-icon { font-size: 24px; flex-shrink: 0; margin-top: 2px; }
+.attack-info .attack-type { font-size: 15px; font-weight: 600; color: var(--danger); margin-bottom: 4px; }
+.attack-info .attack-detail { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+.attack-meta { margin-left: auto; text-align: right; flex-shrink: 0; }
+.attack-meta .time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); }
+.attack-meta .ip { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--warn); margin-top: 4px; }
+
+/* ========== ADMIN CARDS ========== */
+.admin-stat {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 24px;
+  display: flex; align-items: center; gap: 20px;
+}
+.admin-stat-icon { font-size: 32px; }
+.admin-stat-info .label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
+.admin-stat-info .value { font-family: 'JetBrains Mono', monospace; font-size: 26px; color: var(--text); margin-top: 4px; }
+
+/* ========== GOLD PRICE DISPLAY ========== */
+.gold-price-big {
+  font-family: 'Playfair Display', serif;
+  font-size: 52px; color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,215,0,0.3);
+  letter-spacing: -1px;
+}
+.gold-price-unit { font-size: 18px; color: var(--text-dim); margin-left: 4px; vertical-align: super; font-family: 'Cormorant Garamond', serif; }
+
+/* ========== SECTION DIVIDER ========== */
+.section-divider { height: 1px; background: var(--border2); margin: 28px 0; }
+
+/* ========== LIVE INDICATOR ========== */
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--success);
+  animation: pulse 2s infinite; display: inline-block;
+}
+@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,0.5)} 50%{opacity:0.8;box-shadow:0 0 0 6px rgba(34,197,94,0)} }
+
+/* ========== TABS ========== */
+.page-tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--bg-mid); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border2); width: fit-content; }
+.page-tab { padding: 8px 18px; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-muted); transition: all 0.2s; letter-spacing: 0.04em; }
+.page-tab.active { background: var(--gold-dim); color: var(--gold); }
+
+/* ========== PROGRESS BAR ========== */
+.progress-bar { height: 6px; background: var(--bg-dark); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary-l), var(--gold)); border-radius: 3px; transition: width 0.5s; }
+
+/* ========== ALERT BOX ========== */
+.alert-box { border-radius: var(--radius-sm); padding: 14px 18px; font-size: 14px; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.alert-box.danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #FCA5A5; }
+.alert-box.warn   { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #FCD34D; }
+.alert-box.success{ background: rgba(34,197,94,0.1);  border: 1px solid rgba(34,197,94,0.3);  color: #86EFAC; }
+
+/* ========== RESPONSIVE ADJUSTMENTS ========== */
+@media (max-width: 1200px) {
+  .grid-4 { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== TOAST CONTAINER ========== -->
+<div id="toast-container"></div>
+
+<!-- ========== TICKER BAR (hidden on auth page) ========== -->
+<div id="ticker-bar" style="display:none;">
+  <div class="ticker-track" id="ticker-track"></div>
+</div>
+
+<!-- ========== SIDEBAR (hidden on auth page) ========== -->
+<nav id="sidebar" style="display:none;">
+  <div class="sidebar-logo" onclick="navigate('home')">
+    <!-- INLINE SVG LOGO -->
+    <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="19" cy="19" r="19" fill="#0B3D91"/>
+      <polygon points="19,6 24,16 34,16 26,23 29,33 19,27 9,33 12,23 4,16 14,16" fill="#FFD700" opacity="0.15"/>
+      <path d="M13 26 L19 10 L25 26 M15 21 H23" stroke="#FFD700" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="19" cy="19" r="18" stroke="#FFD700" stroke-width="1" opacity="0.4"/>
+    </svg>
+    <div class="sidebar-logo-text">
+      <div class="brand">AURUM</div>
+      <div class="tagline">Capital</div>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-section-title">Markets</div>
+    <div class="nav-item" data-page="home" onclick="navigate('home')">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" data-page="gold" onclick="navigate('gold')">
+      <span class="nav-icon">🥇</span> Gold Trading
+    </div>
+    <div class="nav-item" data-page="stocks" onclick="navigate('stocks')">
+      <span class="nav-icon">📈</span> Stock Market
+    </div>
+
+    <div class="nav-section-title" style="margin-top:10px;">Account</div>
+    <div class="nav-item" data-page="portfolio" onclick="navigate('portfolio')">
+      <span class="nav-icon">💼</span> Portfolio
+    </div>
+
+    <div class="nav-section-title" id="admin-section-title" style="margin-top:10px;display:none;">Admin</div>
+    <div class="nav-item" data-page="admin" onclick="navigate('admin')" id="nav-admin" style="display:none;">
+      <span class="nav-icon">⚙️</span> Admin Panel
+    </div>
+    <div class="nav-item" data-page="security" onclick="navigate('security')" id="nav-security" style="display:none;">
+      <span class="nav-icon">🛡️</span> Security Center
+      <span class="nav-badge" id="security-badge">0</span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user" onclick="navigate('portfolio')">
+      <div class="user-avatar" id="sidebar-avatar">U</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-username">User</div>
+        <div class="user-role" id="sidebar-role">Member</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="Auth.logout()">⇠ Logout</button>
+  </div>
+</nav>
+
+<!-- ===================== AUTH PAGE ===================== -->
+<div id="page-auth">
+  <div class="auth-container">
+    <div class="auth-hero">
+      <div class="auth-hero-content">
+        <div class="hero-logo">
+          <svg width="48" height="48" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="19" cy="19" r="19" fill="rgba(255,215,0,0.15)"/>
+            <path d="M13 26 L19 10 L25 26 M15 21 H23" stroke="#FFD700" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="19" cy="19" r="18" stroke="#FFD700" stroke-width="1.5" opacity="0.6"/>
+          </svg>
+          <div class="hero-logo-text">
+            <div class="brand" style="font-size:30px;">AURUM CAPITAL</div>
+            <div class="tagline">Smart Gold & Stock Trading</div>
+          </div>
+        </div>
+        <h2>Trade with Confidence,<br><em>Invest with Intelligence</em></h2>
+        <p>AI-powered platform for gold and equity trading with real-time cyber threat detection and portfolio analytics.</p>
+        <div class="auth-hero-features">
+          <div class="feature-item"><div class="feature-icon">🥇</div> Live Gold Price Trading & Analytics</div>
+          <div class="feature-item"><div class="feature-icon">📈</div> Global Stock Market Access</div>
+          <div class="feature-item"><div class="feature-icon">🛡️</div> AI Anomaly Detection & Security</div>
+          <div class="feature-item"><div class="feature-icon">💼</div> Real-Time Portfolio Monitoring</div>
+        </div>
+      </div>
+      <div class="auth-hero-stats">
+        <div class="auth-stat"><div class="auth-stat-val">$2.1T</div><div class="auth-stat-lbl">Volume Traded</div></div>
+        <div class="auth-stat"><div class="auth-stat-val">99.9%</div><div class="auth-stat-lbl">Uptime SLA</div></div>
+        <div class="auth-stat"><div class="auth-stat-val">847</div><div class="auth-stat-lbl">Attacks Blocked</div></div>
+        <div class="auth-stat"><div class="auth-stat-val">12ms</div><div class="auth-stat-lbl">Avg Latency</div></div>
+      </div>
+    </div>
+
+    <div class="auth-form">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+        <div class="auth-tab" onclick="switchAuthTab('register')">Register</div>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div class="auth-form-section active" id="auth-login">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" id="login-username" placeholder="Enter username" type="text" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="login-password" placeholder="Enter password" type="password" autocomplete="current-password">
+        </div>
+        <button class="auth-submit" onclick="Auth.login()">Sign In to Aurum Capital</button>
+        <div class="demo-credentials">
+          <p>🔑 Demo credentials:</p>
+          <code>User: demo / Demo@123 &nbsp;|&nbsp; Admin: admin / Admin@123</code>
+        </div>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div class="auth-form-section" id="auth-register">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" id="reg-name" placeholder="Your full name" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" id="reg-username" placeholder="Choose a username" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" id="reg-email" placeholder="you@email.com" type="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" id="reg-password" placeholder="Min. 6 characters" type="password">
+        </div>
+        <button class="auth-submit" onclick="Auth.register()">Create Account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== AUTHENTICATED APP ===================== -->
+<div id="app-shell" style="display:none;">
+
+<!-- ========== HOME PAGE ========== -->
+<div class="main-content page active" id="page-home">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Market Overview</h1>
+      <p class="page-subtitle">Live prices, trends & portfolio summary · <span class="live-dot"></span> <span style="font-size:13px;color:var(--text-muted);vertical-align:middle;">Real-time</span></p>
+    </div>
+    <div id="home-wallet-display" style="text-align:right;">
+      <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;">Cash Balance</div>
+      <div id="home-balance" style="font-family:'JetBrains Mono',monospace;font-size:26px;color:var(--gold);">$0.00</div>
+    </div>
+  </div>
+
+  <!-- PRICE CARDS -->
+  <div class="grid-4" id="price-cards-grid" style="margin-bottom:24px;"></div>
+
+  <!-- CHARTS ROW -->
+  <div class="grid-21" style="margin-bottom:24px;">
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Gold Price History</span>
+        <div class="chart-tabs">
+          <div class="chart-tab active" onclick="changeGoldChart('7d',this)">7D</div>
+          <div class="chart-tab" onclick="changeGoldChart('30d',this)">30D</div>
+          <div class="chart-tab" onclick="changeGoldChart('90d',this)">90D</div>
+        </div>
+      </div>
+      <div class="chart-container" style="height:220px;"><canvas id="goldChartHome"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header"><span class="chart-title">Portfolio Allocation</span></div>
+      <div class="chart-container" style="height:220px;"><canvas id="allocationChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- STOCKS OVERVIEW + RECENT TRANSACTIONS -->
+  <div class="grid-21">
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Top Movers</span>
+        <button class="btn btn-outline btn-sm" onclick="navigate('stocks')">View All ›</button>
+      </div>
+      <div id="home-stocks-table"></div>
+    </div>
+    <div class="card">
+      <div class="chart-header">
+        <span class="chart-title">Recent Activity</span>
+        <button class="btn btn-outline btn-sm" onclick="navigate('portfolio')">All ›</button>
+      </div>
+      <div id="home-recent-tx"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== GOLD TRADING PAGE ========== -->
+<div class="main-content page" id="page-gold">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gold Trading</h1>
+      <p class="page-subtitle">Spot gold prices · XAU/USD</p>
+    </div>
+  </div>
+
+  <div class="grid-21" style="margin-bottom:24px;">
+    <div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:8px;">XAU / USD · Spot Price</div>
+          <div>
+            <span class="gold-price-big" id="gold-price-display">$0.00</span>
+            <span class="gold-price-unit">/ oz</span>
+          </div>
+          <div id="gold-price-change" class="price-change pos" style="margin-top:8px;font-size:16px;"></div>
+        </div>
+        <span class="live-dot" style="margin-top:12px;"></span>
+      </div>
+      <div class="chart-container" style="height:260px;"><canvas id="goldChartMain"></canvas></div>
+      <div class="chart-tabs" style="margin-top:12px;">
+        <div class="chart-tab active" onclick="changeGoldMainChart('1d',this)">1D</div>
+        <div class="chart-tab" onclick="changeGoldMainChart('7d',this)">7D</div>
+        <div class="chart-tab" onclick="changeGoldMainChart('30d',this)">30D</div>
+        <div class="chart-tab" onclick="changeGoldMainChart('90d',this)">90D</div>
+      </div>
+    </div>
+
+    <div>
+      <!-- TRADE PANEL -->
+      <div class="trade-panel" style="margin-bottom:20px;">
+        <div style="font-family:'Playfair Display',serif;font-size:17px;margin-bottom:16px;color:var(--text);">Trade Gold</div>
+        <div class="trade-tabs">
+          <div class="trade-tab buy active" id="gold-buy-tab" onclick="switchGoldTrade('buy')">▲ Buy</div>
+          <div class="trade-tab sell" id="gold-sell-tab" onclick="switchGoldTrade('sell')">▼ Sell</div>
+        </div>
+        <div id="gold-trade-action-label" style="font-size:12px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;letter-spacing:0.08em;">Buy Amount (oz)</div>
+        <input class="form-input" id="gold-trade-amount" type="number" step="0.01" min="0.01" placeholder="0.00 oz" oninput="updateGoldSummary()">
+        <div class="trade-summary" id="gold-trade-summary">
+          <div class="trade-row"><span class="label">Current Price</span><span class="value" id="gold-sum-price">—</span></div>
+          <div class="trade-row"><span class="label">Amount</span><span class="value" id="gold-sum-amount">— oz</span></div>
+          <div class="trade-row"><span class="label">Estimated Total</span><span class="value" id="gold-sum-total">—</span></div>
+          <div class="trade-row"><span class="label">Available Cash</span><span class="value" id="gold-sum-cash">—</span></div>
+        </div>
+        <button class="btn btn-buy" id="gold-trade-btn" onclick="Trading.executeGoldTrade()">Buy Gold</button>
+      </div>
+      <!-- HOLDINGS SUMMARY -->
+      <div class="card" style="padding:18px 20px;">
+        <div class="card-title">My Gold Holdings</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+          <div style="background:var(--bg-dark);border-radius:var(--radius-sm);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Quantity</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--gold);" id="gold-holding-qty">0.00 oz</div>
+          </div>
+          <div style="background:var(--bg-dark);border-radius:var(--radius-sm);padding:14px;">
+            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Market Value</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--text);" id="gold-holding-val">$0.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GOLD TRANSACTION HISTORY -->
+  <div class="card">
+    <div class="chart-header"><span class="chart-title">Gold Transaction History</span></div>
+    <div class="table-wrap" id="gold-tx-table"></div>
+  </div>
+</div>
+
+<!-- ========== STOCK MARKET PAGE ========== -->
+<div class="main-content page" id="page-stocks">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Stock Market</h1>
+      <p class="page-subtitle">Equities & ETFs · Live prices</p>
+    </div>
+  </div>
+
+  <div class="grid-21">
+    <!-- LEFT: STOCK LIST -->
+    <div>
+      <div class="grid-2" id="stock-cards-grid" style="margin-bottom:20px;"></div>
+    </div>
+
+    <!-- RIGHT: TRADE PANEL + CHART -->
+    <div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="chart-header">
+          <span class="chart-title" id="selected-stock-name">Select a Stock</span>
+          <div style="text-align:right;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--gold);" id="selected-stock-price">—</div>
+            <div id="selected-stock-chg" style="font-family:'JetBrains Mono',monospace;font-size:13px;"></div>
+          </div>
+        </div>
+        <div class="chart-container" style="height:180px;"><canvas id="stockChartMain"></canvas></div>
+      </div>
+
+      <div class="trade-panel">
+        <div style="font-family:'Playfair Display',serif;font-size:17px;margin-bottom:16px;color:var(--text);">Trade <span id="trade-stock-label" style="color:var(--gold);">—</span></div>
+        <div class="trade-tabs">
+          <div class="trade-tab buy active" id="stock-buy-tab" onclick="switchStockTrade('buy')">▲ Buy</div>
+          <div class="trade-tab sell" id="stock-sell-tab" onclick="switchStockTrade('sell')">▼ Sell</div>
+        </div>
+        <label class="form-label" style="margin-top:8px;">Number of Shares</label>
+        <input class="form-input" id="stock-trade-amount" type="number" step="1" min="1" placeholder="0 shares" oninput="updateStockSummary()">
+        <div class="trade-summary" id="stock-trade-summary" style="margin:14px 0;">
+          <div class="trade-row"><span class="label">Stock</span><span class="value" id="stk-sum-sym">—</span></div>
+          <div class="trade-row"><span class="label">Price / Share</span><span class="value" id="stk-sum-price">—</span></div>
+          <div class="trade-row"><span class="label">Shares</span><span class="value" id="stk-sum-qty">—</span></div>
+          <div class="trade-row"><span class="label">Estimated Total</span><span class="value" id="stk-sum-total">—</span></div>
+          <div class="trade-row"><span class="label">Available Cash</span><span class="value" id="stk-sum-cash">—</span></div>
+        </div>
+        <button class="btn btn-buy" id="stock-trade-btn" onclick="Trading.executeStockTrade()">Buy Stock</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PORTFOLIO PAGE ========== -->
+<div class="main-content page" id="page-portfolio">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">My Portfolio</h1>
+      <p class="page-subtitle">Holdings, performance & transaction history</p>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO STATS -->
+  <div class="grid-4" id="portfolio-stats" style="margin-bottom:24px;"></div>
+
+  <!-- CHARTS -->
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="card">
+      <div class="chart-header"><span class="chart-title">Holdings Breakdown</span></div>
+      <div class="chart-container" style="height:220px;"><canvas id="holdingsPieChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header"><span class="chart-title">Portfolio Value Over Time</span></div>
+      <div class="chart-container" style="height:220px;"><canvas id="portfolioValueChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- HOLDINGS TABLE -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="chart-header"><span class="chart-title">Current Holdings</span></div>
+    <div class="table-wrap" id="holdings-table"></div>
+  </div>
+
+  <!-- TRANSACTION HISTORY -->
+  <div class="card">
+    <div class="chart-header">
+      <span class="chart-title">Transaction History</span>
+      <select class="form-input form-select" id="tx-filter" style="width:160px;padding:6px 12px;font-size:13px;" onchange="renderTransactionHistory()">
+        <option value="all">All Types</option>
+        <option value="GOLD_BUY">Gold Buy</option>
+        <option value="GOLD_SELL">Gold Sell</option>
+        <option value="STOCK_BUY">Stock Buy</option>
+        <option value="STOCK_SELL">Stock Sell</option>
+      </select>
+    </div>
+    <div class="table-wrap" id="tx-history-table"></div>
+  </div>
+</div>
+
+<!-- ========== ADMIN DASHBOARD PAGE ========== -->
+<div class="main-content page" id="page-admin">
+  <div class="page-header">
+    <h1 class="page-title">Admin Dashboard</h1>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid-4" id="admin-stats" style="margin-bottom:24px;"></div>
+
+  <!-- CHARTS -->
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="card">
+      <div class="chart-header"><span class="chart-title">Trading Volume (7 Days)</span></div>
+      <div class="chart-container" style="height:200px;"><canvas id="adminVolumeChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header"><span class="chart-title">Security Events</span></div>
+      <div class="chart-container" style="height:200px;"><canvas id="adminSecurityChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- USER MANAGEMENT -->
+  <div class="card">
+    <div class="chart-header">
+      <span class="chart-title">User Management</span>
+      <button class="btn btn-gold btn-sm" onclick="showCreateUserModal()">+ New User</button>
+    </div>
+    <div class="table-wrap" id="admin-users-table"></div>
+  </div>
+</div>
+
+<!-- ========== SECURITY CENTER PAGE ========== -->
+<div class="main-content page" id="page-security">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Security Center</h1>
+      <p class="page-subtitle">AI-powered threat detection & cyber security monitoring</p>
+    </div>
+    <button class="btn btn-gold btn-sm" onclick="Security.simulateAttack()">⚡ Simulate Attack</button>
+  </div>
+
+  <!-- SECURITY STATS -->
+  <div class="grid-4" id="security-stats" style="margin-bottom:24px;"></div>
+
+  <!-- CHARTS + ALERTS -->
+  <div class="grid-21" style="margin-bottom:24px;">
+    <div class="card">
+      <div class="chart-header"><span class="chart-title">Attack Distribution by Type</span></div>
+      <div class="chart-container" style="height:220px;"><canvas id="attackTypesChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-header"><span class="chart-title">Threat Level</span></div>
+      <div id="threat-meter" style="padding:10px 0;"></div>
+    </div>
+  </div>
+
+  <!-- SECURITY LOGS -->
+  <div class="card">
+    <div class="chart-header">
+      <span class="chart-title">Security Logs</span>
+      <div style="display:flex;gap:8px;">
+        <select class="form-input form-select" id="sec-filter" style="width:180px;padding:6px 12px;font-size:13px;" onchange="renderSecurityLogs()">
+          <option value="all">All Events</option>
+          <option value="BRUTE_FORCE">Brute Force</option>
+          <option value="PRICE_MANIPULATION">Price Manipulation</option>
+          <option value="FAKE_PAYMENT">Fake Payment</option>
+          <option value="INSUFFICIENT_FUNDS">Insufficient Funds</option>
+          <option value="HIGH_FREQ">High Frequency</option>
+          <option value="UNAUTH_TRADE">Unauthorized Trade</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="Security.clearLogs()">Clear Logs</button>
+      </div>
+    </div>
+    <div id="security-logs-container"></div>
+  </div>
+</div>
+
+</div><!-- /#app-shell -->
+
+<!-- ========== CREATE USER MODAL ========== -->
+<div id="modal-create-user" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;display:flex;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-mid);border:1px solid var(--border);border-radius:var(--radius);padding:36px;width:420px;position:relative;">
+    <h3 style="font-family:'Playfair Display',serif;margin-bottom:24px;">Create New User</h3>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input class="form-input" id="modal-name" placeholder="Full name" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" id="modal-username" placeholder="Username" type="text">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="modal-email" placeholder="Email" type="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" id="modal-password" placeholder="Password" type="password">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select class="form-input form-select" id="modal-role">
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-outline" onclick="document.getElementById('modal-create-user').style.display='none'">Cancel</button>
+      <button class="btn btn-gold" onclick="Admin.createUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====================================================
+   AURUM CAPITAL – COMPLETE TRADING PLATFORM
+   All logic: DB, Auth, Market, Trading, Security, AI, Charts, UI
+   ====================================================
+*/
+
+/* ============================================================
+   MODULE 1: DATABASE (LocalStorage abstraction)
+   ============================================================ */
+const DB = {
+  PREFIX: 'ac_',
+
+  get(key) {
+    try { return JSON.parse(localStorage.getItem(this.PREFIX + key) || '[]'); }
+    catch(e) { return []; }
+  },
+  set(key, data) {
+    localStorage.setItem(this.PREFIX + key, JSON.stringify(data));
+  },
+  getOne(key) {
+    try { return JSON.parse(localStorage.getItem(this.PREFIX + key)); }
+    catch(e) { return null; }
+  },
+  setOne(key, data) {
+    localStorage.setItem(this.PREFIX + key, JSON.stringify(data));
+  },
+
+  // USERS
+  users: {
+    all() { return DB.get('users'); },
+    find(id) { return DB.get('users').find(u => u.id === id); },
+    findByUsername(u) { return DB.get('users').find(x => x.username.toLowerCase() === u.toLowerCase()); },
+    save(user) {
+      const users = DB.get('users');
+      const idx = users.findIndex(u => u.id === user.id);
+      if (idx >= 0) users[idx] = user; else users.push(user);
+      DB.set('users', users);
+    },
+    delete(id) { DB.set('users', DB.get('users').filter(u => u.id !== id)); }
+  },
+
+  // WALLETS
+  wallets: {
+    get(userId) { return DB.get('wallets').find(w => w.userId === userId) || {userId, cash: 0, goldOz: 0, stocks: {}}; },
+    save(wallet) {
+      const wallets = DB.get('wallets');
+      const idx = wallets.findIndex(w => w.userId === wallet.userId);
+      if (idx >= 0) wallets[idx] = wallet; else wallets.push(wallet);
+      DB.set('wallets', wallets);
+    }
+  },
+
+  // TRANSACTIONS
+  tx: {
+    all() { return DB.get('transactions'); },
+    byUser(userId) { return DB.get('transactions').filter(t => t.userId === userId); },
+    add(tx) {
+      const txs = DB.get('transactions');
+      txs.unshift(tx);
+      DB.set('transactions', txs.slice(0, 500)); // cap at 500
+    }
+  },
+
+  // GOLD PRICES
+  goldPrices: {
+    get() { return DB.get('goldPrices'); },
+    set(prices) { DB.set('goldPrices', prices); },
+    addPoint(price) {
+      const prices = DB.get('goldPrices');
+      prices.push({ timestamp: Date.now(), price });
+      if (prices.length > 1440) prices.shift(); // keep ~24h of per-minute data
+      DB.set('goldPrices', prices);
+    }
+  },
+
+  // STOCKS
+  stocks: {
+    get() { return DB.get('stockData'); },
+    set(data) { DB.set('stockData', data); },
+    update(sym, price, change) {
+      const stocks = DB.get('stockData');
+      const s = stocks.find(s => s.symbol === sym);
+      if (s) { s.price = price; s.change = change; s.history.push(price); if (s.history.length > 500) s.history.shift(); }
+      DB.set('stockData', stocks);
+    }
+  },
+
+  // SECURITY LOGS
+  secLogs: {
+    all() { return DB.get('securityLogs'); },
+    add(log) {
+      const logs = DB.get('securityLogs');
+      logs.unshift(log);
+      DB.set('securityLogs', logs.slice(0, 300));
+    },
+    clear() { DB.set('securityLogs', []); }
+  },
+
+  // LOGIN ATTEMPTS (brute force tracking)
+  loginAttempts: {
+    get(username) {
+      const data = DB.getOne('loginAttempts') || {};
+      return data[username.toLowerCase()] || { count: 0, lastAttempt: 0, locked: false };
+    },
+    record(username) {
+      const data = DB.getOne('loginAttempts') || {};
+      const key = username.toLowerCase();
+      const prev = data[key] || { count: 0, lastAttempt: 0, locked: false };
+      // Reset if last attempt >15 min ago
+      if (Date.now() - prev.lastAttempt > 15 * 60000) prev.count = 0;
+      prev.count++;
+      prev.lastAttempt = Date.now();
+      if (prev.count >= 5) prev.locked = true;
+      data[key] = prev;
+      DB.setOne('loginAttempts', data);
+      return prev;
+    },
+    reset(username) {
+      const data = DB.getOne('loginAttempts') || {};
+      delete data[username.toLowerCase()];
+      DB.setOne('loginAttempts', data);
+    },
+    unlock(username) {
+      const data = DB.getOne('loginAttempts') || {};
+      const key = username.toLowerCase();
+      if (data[key]) { data[key].locked = false; data[key].count = 0; }
+      DB.setOne('loginAttempts', data);
+    }
+  },
+
+  // RATE LIMITING (high-frequency trading detection)
+  rateLimit: {
+    check(userId, action) {
+      const data = DB.getOne('rateLimits') || {};
+      const key = `${userId}_${action}`;
+      const now = Date.now();
+      const entry = data[key] || { count: 0, window: now };
+      if (now - entry.window > 60000) { entry.count = 0; entry.window = now; } // 1-min window
+      entry.count++;
+      data[key] = entry;
+      DB.setOne('rateLimits', data);
+      return entry.count;
+    }
+  }
+};
+
+/* ============================================================
+   MODULE 2: UTILITY FUNCTIONS
+   ============================================================ */
+function genId() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+
+function hashPassword(pwd) {
+  // Simple hash for simulation (not cryptographically secure)
+  let hash = 5381;
+  for (let i = 0; i < pwd.length; i++) hash = (hash * 33) ^ pwd.charCodeAt(i);
+  return (hash >>> 0).toString(16);
+}
+
+function fmt(n, dec=2) {
+  if (isNaN(n)) return '—';
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n);
+}
+function fmtCurrency(n, dec=2) { return '$' + fmt(n, dec); }
+function fmtOz(n) { return fmt(n, 4) + ' oz'; }
+function fmtTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+}
+function fakeIP() {
+  return [Math.floor(Math.random()*220)+10, Math.floor(Math.random()*255), Math.floor(Math.random()*255), Math.floor(Math.random()*254)+1].join('.');
+}
+
+/* ============================================================
+   MODULE 3: TOAST NOTIFICATIONS
+   ============================================================ */
+function toast(msg, type='info', duration=4000) {
+  const icons = { success:'✅', error:'❌', warn:'⚠️', info:'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.animation = 'toastOut 0.3s forwards';
+    setTimeout(() => el.remove(), 300);
+  }, duration);
+}
+
+/* ============================================================
+   MODULE 4: DATA SEEDING (first-run initialization)
+   ============================================================ */
+function seedDatabase() {
+  if (DB.getOne('initialized')) return;
+
+  // Seed users
+  DB.users.save({ id:'user_admin', username:'admin', name:'Admin User', email:'admin@aurum.com', password:hashPassword('Admin@123'), role:'admin', status:'active', createdAt:Date.now()-864000000 });
+  DB.users.save({ id:'user_demo', username:'demo', name:'Demo Trader', email:'demo@aurum.com', password:hashPassword('Demo@123'), role:'user', status:'active', createdAt:Date.now()-432000000 });
+  DB.users.save({ id:'user_alice', username:'alice', name:'Alice Chen', email:'alice@aurum.com', password:hashPassword('Alice@123'), role:'user', status:'active', createdAt:Date.now()-216000000 });
+
+  // Seed wallets
+  DB.wallets.save({ userId:'user_admin', cash:150000, goldOz:8.5, stocks:{ AAPL:25, MSFT:10, NVDA:5, GOOGL:8 } });
+  DB.wallets.save({ userId:'user_demo', cash:48250, goldOz:2.3, stocks:{ AAPL:5, TSLA:3, META:2 } });
+  DB.wallets.save({ userId:'user_alice', cash:23000, goldOz:0.5, stocks:{ MSFT:7, AMZN:4 } });
+
+  // Seed gold price history (90 days)
+  const goldPrices = [];
+  let gp = 2050;
+  const now = Date.now();
+  for (let i = 90; i >= 0; i--) {
+    gp = gp * (1 + (Math.random() - 0.48) * 0.018);
+    gp = Math.max(1800, Math.min(2400, gp));
+    goldPrices.push({ timestamp: now - i * 86400000, price: Math.round(gp * 100) / 100 });
+  }
+  // Add intraday points for 1D view
+  const base = goldPrices[goldPrices.length - 1].price;
+  let ip = base;
+  for (let i = 96; i >= 1; i--) {
+    ip = ip * (1 + (Math.random() - 0.49) * 0.005);
+    goldPrices.push({ timestamp: now - i * 900000, price: Math.round(ip * 100) / 100, intraday: true });
+  }
+  goldPrices.push({ timestamp: now, price: Math.round(ip * 100) / 100, intraday: true });
+  DB.goldPrices.set(goldPrices);
+
+  // Seed stocks
+  const stockDefs = [
+    { symbol:'AAPL', name:'Apple Inc.', basePrice:182 },
+    { symbol:'MSFT', name:'Microsoft Corp.', basePrice:378 },
+    { symbol:'GOOGL', name:'Alphabet Inc.', basePrice:141 },
+    { symbol:'AMZN', name:'Amazon.com Inc.', basePrice:178 },
+    { symbol:'TSLA', name:'Tesla Inc.', basePrice:248 },
+    { symbol:'NVDA', name:'NVIDIA Corp.', basePrice:495 },
+    { symbol:'META', name:'Meta Platforms', basePrice:502 },
+    { symbol:'JPM', name:'JPMorgan Chase', basePrice:198 },
+  ];
+  const stocksData = stockDefs.map(s => {
+    const history = [];
+    let p = s.basePrice;
+    for (let i = 90; i >= 0; i--) {
+      p = p * (1 + (Math.random() - 0.49) * 0.025);
+      p = Math.max(s.basePrice * 0.5, p);
+      history.push(Math.round(p * 100) / 100);
+    }
+    const change = ((history[history.length-1] - history[history.length-2]) / history[history.length-2] * 100);
+    return { symbol: s.symbol, name: s.name, price: history[history.length-1], change: Math.round(change * 100)/100, history };
+  });
+  DB.stocks.set(stocksData);
+
+  // Seed transactions
+  const txTypes = ['GOLD_BUY','GOLD_SELL','STOCK_BUY','STOCK_SELL'];
+  const syms = ['AAPL','MSFT','GOOGL','TSLA','NVDA'];
+  const uids = ['user_admin','user_demo','user_alice'];
+  for (let i = 0; i < 25; i++) {
+    const type = txTypes[Math.floor(Math.random()*4)];
+    const uid = uids[Math.floor(Math.random()*3)];
+    const isGold = type.startsWith('GOLD');
+    const sym = isGold ? 'XAU' : syms[Math.floor(Math.random()*5)];
+    const price = isGold ? 2050 + (Math.random()-0.5)*100 : 100 + Math.random()*400;
+    const qty = isGold ? Math.round(Math.random()*200)/100 : Math.floor(Math.random()*20)+1;
+    DB.tx.add({
+      id: genId(), userId: uid, type, symbol: sym,
+      qty: qty, price: Math.round(price*100)/100,
+      total: Math.round(qty*price*100)/100,
+      timestamp: Date.now() - Math.floor(Math.random()*30)*86400000 - Math.floor(Math.random()*86400000),
+      status: 'completed'
+    });
+  }
+
+  // Seed security logs
+  const attackTypes = ['BRUTE_FORCE','PRICE_MANIPULATION','FAKE_PAYMENT','HIGH_FREQ','UNAUTH_TRADE'];
+  const actions = {
+    BRUTE_FORCE: 'Multiple failed login attempts detected from same IP',
+    PRICE_MANIPULATION: 'Attempt to manipulate gold price via frontend injection',
+    FAKE_PAYMENT: 'Transaction submitted with invalid payment reference',
+    HIGH_FREQ: 'Excessive API requests detected — bot activity suspected',
+    UNAUTH_TRADE: 'Stock purchase attempt without sufficient balance',
+  };
+  const recs = {
+    BRUTE_FORCE: 'Block IP, require CAPTCHA, notify account owner',
+    PRICE_MANIPULATION: 'Reject transaction, flag account, alert admin',
+    FAKE_PAYMENT: 'Void transaction, hold account, investigate',
+    HIGH_FREQ: 'Rate limit IP, temporary account suspension',
+    UNAUTH_TRADE: 'Block transaction, log event, review account',
+  };
+  for (let i = 0; i < 12; i++) {
+    const type = attackTypes[Math.floor(Math.random()*5)];
+    const uid = uids[Math.floor(Math.random()*3)];
+    DB.secLogs.add({
+      id: genId(), userId: uid, attackType: type,
+      detail: actions[type], recommendation: recs[type],
+      ip: fakeIP(), timestamp: Date.now() - Math.floor(Math.random()*7)*86400000 - Math.random()*86400000,
+      blocked: Math.random() > 0.2, severity: ['LOW','MEDIUM','HIGH','CRITICAL'][Math.floor(Math.random()*4)]
+    });
+  }
+
+  DB.setOne('initialized', true);
+  console.log('[Aurum Capital] Database initialized with seed data.');
+}
+
+/* ============================================================
+   MODULE 5: AUTHENTICATION
+   ============================================================ */
+const Auth = {
+  currentUser: null,
+
+  login() {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!username || !password) { toast('Please enter username and password', 'warn'); return; }
+
+    // SECURITY: Check brute force
+    const attempts = DB.loginAttempts.get(username);
+    if (attempts.locked) {
+      Security.logEvent('BRUTE_FORCE', null, username, `Account locked after repeated failed attempts for user: ${username}`);
+      toast('Account temporarily locked due to multiple failed attempts. Wait 15 minutes.', 'error');
+      return;
+    }
+
+    const user = DB.users.findByUsername(username);
+    if (!user || user.password !== hashPassword(password)) {
+      const rec = DB.loginAttempts.record(username);
+      const remaining = 5 - rec.count;
+      if (rec.locked) {
+        Security.logEvent('BRUTE_FORCE', null, username, `Account locked: ${username} after 5 failed attempts`);
+        toast('Account locked. 5 failed attempts. Wait 15 minutes.', 'error');
+      } else {
+        toast(`Invalid credentials. ${remaining} attempt(s) remaining.`, 'error');
+      }
+      return;
+    }
+
+    if (user.status === 'suspended') { toast('Account suspended. Contact admin.', 'error'); return; }
+
+    DB.loginAttempts.reset(username);
+    this.currentUser = user;
+    DB.setOne('session', user.id);
+    this.postLogin();
+  },
+
+  register() {
+    const name = document.getElementById('reg-name').value.trim();
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+
+    if (!name || !username || !email || !password) { toast('Please fill in all fields', 'warn'); return; }
+    if (username.length < 3) { toast('Username must be at least 3 characters', 'warn'); return; }
+    if (password.length < 6) { toast('Password must be at least 6 characters', 'warn'); return; }
+    if (DB.users.findByUsername(username)) { toast('Username already taken', 'error'); return; }
+
+    const user = { id:'user_'+genId(), username, name, email, password:hashPassword(password), role:'user', status:'active', createdAt:Date.now() };
+    DB.users.save(user);
+    DB.wallets.save({ userId:user.id, cash:10000, goldOz:0, stocks:{} });
+    toast('Account created! Welcome to Aurum Capital. Starting balance: $10,000', 'success');
+    switchAuthTab('login');
+    document.getElementById('login-username').value = username;
+  },
+
+  logout() {
+    this.currentUser = null;
+    localStorage.removeItem('ac_session');
+    showAuthPage();
+    toast('Logged out successfully', 'info');
+  },
+
+  restoreSession() {
+    const uid = DB.getOne('session');
+    if (uid) {
+      const user = DB.users.find(uid);
+      if (user && user.status !== 'suspended') { this.currentUser = user; return true; }
+    }
+    return false;
+  },
+
+  postLogin() {
+    toast(`Welcome back, ${this.currentUser.name}! 🥇`, 'success');
+    showApp();
+    navigate('home');
+  }
+};
+
+/* ============================================================
+   MODULE 6: MARKET SIMULATION (live price updates)
+   ============================================================ */
+const Market = {
+  tickInterval: null,
+  chartUpdateInterval: null,
+
+  start() {
+    this.tick();
+    this.tickInterval = setInterval(() => this.tick(), 8000); // update every 8s
+  },
+
+  stop() {
+    clearInterval(this.tickInterval);
+    clearInterval(this.chartUpdateInterval);
+  },
+
+  tick() {
+    // Update gold price
+    const prices = DB.goldPrices.get();
+    const lastPrice = prices[prices.length-1]?.price || 2050;
+    const newPrice = Math.max(1800, Math.min(2500, lastPrice * (1 + (Math.random()-0.495) * 0.008)));
+    DB.goldPrices.addPoint(Math.round(newPrice * 100)/100);
+
+    // Update stock prices
+    const stocks = DB.stocks.get();
+    stocks.forEach(s => {
+      const change = (Math.random()-0.495) * 0.012;
+      const newP = Math.round(s.price * (1+change) * 100)/100;
+      DB.stocks.update(s.symbol, newP, Math.round(change*10000)/100);
+    });
+
+    // Refresh UI
+    this.refreshUI();
+  },
+
+  refreshUI() {
+    updateTicker();
+    const currentPage = getCurrentPage();
+    if (currentPage === 'home') { renderHomePage(); }
+    if (currentPage === 'gold') { refreshGoldPage(); }
+    if (currentPage === 'stocks') { renderStockCards(); }
+  },
+
+  getGoldPrice() {
+    const prices = DB.goldPrices.get();
+    return prices[prices.length-1]?.price || 2050;
+  },
+
+  getGoldChange() {
+    const prices = DB.goldPrices.get().filter(p => !p.intraday || p.intraday);
+    if (prices.length < 2) return 0;
+    const prev = prices[prices.length-2]?.price;
+    const curr = prices[prices.length-1]?.price;
+    return Math.round((curr - prev) / prev * 10000) / 100;
+  },
+
+  getStock(sym) {
+    return DB.stocks.get().find(s => s.symbol === sym);
+  },
+
+  getAllStocks() { return DB.stocks.get(); }
+};
+
+/* ============================================================
+   MODULE 7: TRADING ENGINE
+   ============================================================ */
+const Trading = {
+  goldMode: 'buy',  // 'buy' or 'sell'
+  stockMode: 'buy',
+  selectedStock: null,
+
+  executeGoldTrade() {
+    const user = Auth.currentUser;
+    if (!user) return;
+    const amountStr = document.getElementById('gold-trade-amount').value;
+    const amount = parseFloat(amountStr);
+    if (!amount || amount <= 0) { toast('Enter a valid amount', 'warn'); return; }
+
+    // SECURITY: Rate limiting check
+    const reqCount = DB.rateLimit.check(user.id, 'GOLD_TRADE');
+    if (reqCount > 10) {
+      Security.logEvent('HIGH_FREQ', user.id, user.username, `High-frequency gold trading: ${reqCount} requests/min`);
+      toast('Too many requests. Slow down — rate limit exceeded.', 'error'); return;
+    }
+
+    const price = Market.getGoldPrice();
+    const total = Math.round(amount * price * 100) / 100;
+    const wallet = DB.wallets.get(user.id);
+
+    if (this.goldMode === 'buy') {
+      // SECURITY: Check sufficient funds
+      if (wallet.cash < total) {
+        Security.logEvent('INSUFFICIENT_FUNDS', user.id, user.username, `Attempted gold buy worth ${fmtCurrency(total)} with only ${fmtCurrency(wallet.cash)} balance`);
+        toast(`Insufficient funds. Need ${fmtCurrency(total)}, have ${fmtCurrency(wallet.cash)}`, 'error'); return;
+      }
+      // SECURITY: Anomaly — very large single trade
+      if (total > wallet.cash * 0.9 && wallet.cash > 10000) {
+        Security.logEvent('UNAUTH_TRADE', user.id, user.username, `Suspiciously large gold buy: ${fmtCurrency(total)} (${Math.round(total/wallet.cash*100)}% of balance)`);
+        toast('⚠️ Large trade flagged for review. Proceeding...', 'warn', 5000);
+      }
+      wallet.cash = Math.round((wallet.cash - total) * 100) / 100;
+      wallet.goldOz = Math.round((wallet.goldOz + amount) * 10000) / 10000;
+      DB.wallets.save(wallet);
+      DB.tx.add({ id:genId(), userId:user.id, type:'GOLD_BUY', symbol:'XAU', qty:amount, price, total, timestamp:Date.now(), status:'completed' });
+      toast(`✅ Bought ${fmtOz(amount)} gold for ${fmtCurrency(total)}`, 'success');
+    } else {
+      if (wallet.goldOz < amount) { toast(`Insufficient gold. Own ${fmtOz(wallet.goldOz)}, tried to sell ${fmtOz(amount)}`, 'error'); return; }
+      wallet.cash = Math.round((wallet.cash + total) * 100) / 100;
+      wallet.goldOz = Math.round((wallet.goldOz - amount) * 10000) / 10000;
+      DB.wallets.save(wallet);
+      DB.tx.add({ id:genId(), userId:user.id, type:'GOLD_SELL', symbol:'XAU', qty:amount, price, total, timestamp:Date.now(), status:'completed' });
+      toast(`✅ Sold ${fmtOz(amount)} gold for ${fmtCurrency(total)}`, 'success');
+    }
+
+    document.getElementById('gold-trade-amount').value = '';
+    refreshGoldPage();
+    updateSidebarBalance();
+  },
+
+  executeStockTrade() {
+    const user = Auth.currentUser;
+    if (!user || !this.selectedStock) { toast('Select a stock first', 'warn'); return; }
+    const sharesStr = document.getElementById('stock-trade-amount').value;
+    const shares = parseInt(sharesStr);
+    if (!shares || shares <= 0) { toast('Enter a valid number of shares', 'warn'); return; }
+
+    // SECURITY: Rate limiting
+    const reqCount = DB.rateLimit.check(user.id, 'STOCK_TRADE');
+    if (reqCount > 10) {
+      Security.logEvent('HIGH_FREQ', user.id, user.username, `High-frequency stock trading: ${reqCount} requests/min`);
+      toast('Rate limit exceeded. Too many trade requests.', 'error'); return;
+    }
+
+    const stock = Market.getStock(this.selectedStock);
+    if (!stock) { toast('Stock data unavailable', 'error'); return; }
+
+    // SECURITY: Validate price is within reasonable range (prevent price manipulation)
+    if (stock.price <= 0 || stock.price > 100000) {
+      Security.logEvent('PRICE_MANIPULATION', user.id, user.username, `Stock price out of range: ${this.selectedStock} = ${stock.price}`);
+      toast('Invalid price detected. Trade blocked.', 'error'); return;
+    }
+
+    const total = Math.round(stock.price * shares * 100) / 100;
+    const wallet = DB.wallets.get(user.id);
+
+    if (this.stockMode === 'buy') {
+      if (wallet.cash < total) {
+        Security.logEvent('INSUFFICIENT_FUNDS', user.id, user.username, `Attempted ${this.selectedStock} buy worth ${fmtCurrency(total)} with only ${fmtCurrency(wallet.cash)}`);
+        toast(`Insufficient funds. Need ${fmtCurrency(total)}, have ${fmtCurrency(wallet.cash)}`, 'error'); return;
+      }
+      wallet.cash = Math.round((wallet.cash - total) * 100) / 100;
+      wallet.stocks[this.selectedStock] = (wallet.stocks[this.selectedStock] || 0) + shares;
+      DB.wallets.save(wallet);
+      DB.tx.add({ id:genId(), userId:user.id, type:'STOCK_BUY', symbol:this.selectedStock, qty:shares, price:stock.price, total, timestamp:Date.now(), status:'completed' });
+      toast(`✅ Bought ${shares} shares of ${this.selectedStock} for ${fmtCurrency(total)}`, 'success');
+    } else {
+      const owned = wallet.stocks[this.selectedStock] || 0;
+      if (owned < shares) { toast(`Insufficient shares. Own ${owned}, tried to sell ${shares}`, 'error'); return; }
+      wallet.cash = Math.round((wallet.cash + total) * 100) / 100;
+      wallet.stocks[this.selectedStock] = owned - shares;
+      if (wallet.stocks[this.selectedStock] === 0) delete wallet.stocks[this.selectedStock];
+      DB.wallets.save(wallet);
+      DB.tx.add({ id:genId(), userId:user.id, type:'STOCK_SELL', symbol:this.selectedStock, qty:shares, price:stock.price, total, timestamp:Date.now(), status:'completed' });
+      toast(`✅ Sold ${shares} shares of ${this.selectedStock} for ${fmtCurrency(total)}`, 'success');
+    }
+
+    document.getElementById('stock-trade-amount').value = '';
+    renderStockCards();
+    updateStockSummary();
+    updateSidebarBalance();
+  }
+};
+
+/* ============================================================
+   MODULE 8: SECURITY & AI ANOMALY DETECTION
+   ============================================================ */
+const Security = {
+
+  logEvent(type, userId, username, detail, severity='MEDIUM') {
+    const recs = {
+      BRUTE_FORCE: 'Block IP, enable CAPTCHA, lock account, notify owner',
+      PRICE_MANIPULATION: 'Reject trade, flag account, alert admin immediately',
+      FAKE_PAYMENT: 'Void transaction, hold funds, initiate investigation',
+      HIGH_FREQ: 'Rate limit IP, temporary suspension, notify admin',
+      INSUFFICIENT_FUNDS: 'Block transaction, log attempt, review account',
+      UNAUTH_TRADE: 'Block trade, flag account, require re-authentication',
+    };
+    const log = {
+      id: genId(), userId, username, attackType: type,
+      detail, recommendation: recs[type] || 'Review and take appropriate action',
+      ip: fakeIP(), timestamp: Date.now(), blocked: true, severity
+    };
+    DB.secLogs.add(log);
+    updateSecurityBadge();
+    console.warn(`[SECURITY ALERT] ${type}: ${detail}`);
+  },
+
+  simulateAttack() {
+    const types = ['BRUTE_FORCE','PRICE_MANIPULATION','FAKE_PAYMENT','HIGH_FREQ','UNAUTH_TRADE'];
+    const type = types[Math.floor(Math.random()*5)];
+    const users = DB.users.all();
+    const user = users[Math.floor(Math.random()*users.length)];
+    const details = {
+      BRUTE_FORCE: `Automated brute force attack detected against user: ${user.username}`,
+      PRICE_MANIPULATION: `Frontend price override detected — gold price set to $999 by attacker`,
+      FAKE_PAYMENT: `Fraudulent payment reference submitted by IP ${fakeIP()}`,
+      HIGH_FREQ: `Bot detected: 250 API calls in 60 seconds from IP ${fakeIP()}`,
+      UNAUTH_TRADE: `Unauthorized trade attempt — session token mismatch for ${user.username}`,
+    };
+    const sevs = ['HIGH','CRITICAL','HIGH','MEDIUM','CRITICAL'];
+    this.logEvent(type, user.id, user.username, details[type], sevs[types.indexOf(type)]);
+    toast(`🚨 Attack detected & blocked: ${type.replace(/_/g,' ')}`, 'error', 5000);
+    if (getCurrentPage() === 'security') renderSecurityPage();
+  },
+
+  clearLogs() {
+    if (confirm('Clear all security logs?')) {
+      DB.secLogs.clear();
+      updateSecurityBadge();
+      renderSecurityLogs();
+      toast('Security logs cleared', 'info');
+    }
+  },
+
+  // AI: Analyze user trading patterns for anomalies
+  analyzePatterns(userId) {
+    const txs = DB.tx.byUser(userId);
+    const recent = txs.filter(t => Date.now() - t.timestamp < 3600000); // last 1 hour
+    const findings = [];
+
+    if (recent.length > 15) findings.push({ type:'HIGH_FREQ', msg:`${recent.length} trades in last hour` });
+
+    const largeGold = recent.filter(t => t.type==='GOLD_BUY' && t.total > 20000);
+    if (largeGold.length > 2) findings.push({ type:'UNAUTH_TRADE', msg:'Multiple large gold purchases detected' });
+
+    return findings;
+  }
+};
+
+/* ============================================================
+   MODULE 9: CHARTS
+   ============================================================ */
+const Charts = {
+  instances: {},
+
+  destroy(id) { if (this.instances[id]) { this.instances[id].destroy(); delete this.instances[id]; } },
+
+  goldLine(canvasId, days=30) {
+    this.destroy(canvasId);
+    const prices = DB.goldPrices.get();
+    const now = Date.now();
+    let filtered;
+    if (days === 1) {
+      // Use intraday data (last 24h)
+      filtered = prices.filter(p => now - p.timestamp < 86400000);
+    } else {
+      filtered = prices.filter(p => !p.intraday && now - p.timestamp < days * 86400000);
+    }
+    if (filtered.length < 2) filtered = prices.slice(-days);
+    const labels = filtered.map(p => {
+      const d = new Date(p.timestamp);
+      return days <= 1 ? d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) : d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    });
+    const data = filtered.map(p => p.price);
+    const minP = Math.min(...data), maxP = Math.max(...data);
+    const trending = data[data.length-1] >= data[0];
+    const gradColor = trending ? 'rgba(34,197,94,' : 'rgba(239,68,68,';
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data, fill: true,
+          borderColor: trending ? '#22C55E' : '#EF4444',
+          borderWidth: 2,
+          pointRadius: 0, tension: 0.4,
+          backgroundColor: (context) => {
+            const bg = context.chart.ctx.createLinearGradient(0,0,0,context.chart.height||220);
+            bg.addColorStop(0, gradColor+'0.25)'); bg.addColorStop(1, gradColor+'0)');
+            return bg;
+          }
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+        plugins: { legend:{display:false}, tooltip:{
+          mode:'index', intersect:false,
+          callbacks: { label: ctx => ' $'+fmt(ctx.raw) }
+        }},
+        scales: {
+          x: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4A5E80',maxTicksLimit:8,font:{size:11}} },
+          y: { grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4A5E80',callback:v=>'$'+Math.round(v),font:{size:11}}, min: Math.floor(minP*0.998), max: Math.ceil(maxP*1.002) }
+        }
+      }
+    });
+    this.instances[canvasId] = chart;
+  },
+
+  stockLine(canvasId, symbol, points=60) {
+    this.destroy(canvasId);
+    const stock = Market.getStock(symbol);
+    if (!stock) return;
+    const data = stock.history.slice(-points);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    const trending = data[data.length-1] >= data[0];
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map((_,i) => i),
+        datasets: [{ data, fill:true, borderColor: trending?'#22C55E':'#EF4444', borderWidth:2, pointRadius:0, tension:0.4,
+          backgroundColor: (context) => {
+            const bg = context.chart.ctx.createLinearGradient(0,0,0,context.chart.height||180);
+            bg.addColorStop(0, trending?'rgba(34,197,94,0.2)':'rgba(239,68,68,0.2)');
+            bg.addColorStop(1, 'rgba(0,0,0,0)'); return bg;
+          }
+        }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, animation:{duration:300},
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>' $'+fmt(c.raw)}}},
+        scales:{
+          x:{display:false},
+          y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4A5E80',callback:v=>'$'+Math.round(v),font:{size:11}}}
+        }
+      }
+    });
+    this.instances[canvasId] = chart;
+  },
+
+  miniSparkline(canvasId, data, up) {
+    this.destroy(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    new Chart(ctx, {
+      type:'line',
+      data:{ labels:data.map((_,i)=>i), datasets:[{data, fill:false, borderColor:up?'#22C55E':'#EF4444', borderWidth:1.5, pointRadius:0, tension:0.4}] },
+      options:{ responsive:true, maintainAspectRatio:false, animation:{duration:0}, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}} }
+    });
+  },
+
+  donut(canvasId, labels, data, colors) {
+    this.destroy(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    new Chart(ctx, {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor:colors, borderColor:'rgba(0,0,0,0.3)', borderWidth:2, hoverOffset:6 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:{duration:600},
+        plugins:{ legend:{ position:'right', labels:{ color:'#7A90B4', font:{size:12}, padding:16 } }, tooltip:{callbacks:{label:c=>`${c.label}: $${fmt(c.raw)}`}} },
+        cutout:'65%'
+      }
+    });
+  },
+
+  bar(canvasId, labels, data, label='Volume', color='rgba(255,215,0,0.7)') {
+    this.destroy(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    new Chart(ctx, {
+      type:'bar',
+      data:{ labels, datasets:[{ label, data, backgroundColor:color, borderColor: color.replace('0.7','1'), borderWidth:1, borderRadius:4 }] },
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:{duration:400},
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` $${fmt(c.raw)}`}} },
+        scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4A5E80',font:{size:11}}}, y:{grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#4A5E80',callback:v=>'$'+Math.round(v/1000)+'K',font:{size:11}}} }
+      }
+    });
+  },
+
+  pieAttackTypes(canvasId) {
+    this.destroy(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    const logs = DB.secLogs.all();
+    const counts = {};
+    logs.forEach(l => { counts[l.attackType] = (counts[l.attackType]||0) + 1; });
+    const labels = Object.keys(counts);
+    const data = Object.values(counts);
+    const colors = ['#EF4444','#F59E0B','#8B5CF6','#EC4899','#06B6D4'];
+    new Chart(ctx, {
+      type:'doughnut',
+      data:{ labels, datasets:[{ data, backgroundColor:colors.slice(0,data.length), borderColor:'rgba(0,0,0,0.3)', borderWidth:2, hoverOffset:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false, animation:{duration:400},
+        plugins:{ legend:{position:'right', labels:{color:'#7A90B4',font:{size:11},padding:12}}, tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} events`}} }, cutout:'60%' }
+    });
+  }
+};
+
+/* ============================================================
+   MODULE 10: UI RENDERING FUNCTIONS
+   ============================================================ */
+
+// ---- AUTH ----
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('auth-login').classList.toggle('active', tab==='login');
+  document.getElementById('auth-register').classList.toggle('active', tab==='register');
+}
+
+// ---- APP SHELL ----
+function showAuthPage() {
+  document.getElementById('page-auth').style.display = 'flex';
+  document.getElementById('app-shell').style.display = 'none';
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('ticker-bar').style.display = 'none';
+  Market.stop();
+}
+
+function showApp() {
+  document.getElementById('page-auth').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'block';
+  document.getElementById('sidebar').style.display = 'flex';
+  document.getElementById('ticker-bar').style.display = 'flex';
+
+  const user = Auth.currentUser;
+  document.getElementById('sidebar-avatar').textContent = user.name.charAt(0).toUpperCase();
+  document.getElementById('sidebar-username').textContent = user.name;
+  document.getElementById('sidebar-role').textContent = user.role === 'admin' ? 'Administrator' : 'Trader';
+
+  // Show admin links if admin
+  if (user.role === 'admin') {
+    document.getElementById('admin-section-title').style.display = 'block';
+    document.getElementById('nav-admin').style.display = 'flex';
+    document.getElementById('nav-security').style.display = 'flex';
+  }
+
+  updateSecurityBadge();
+  Market.start();
+}
+
+function updateSidebarBalance() {
+  if (!Auth.currentUser) return;
+  const wallet = DB.wallets.get(Auth.currentUser.id);
+  const homeBalance = document.getElementById('home-balance');
+  if (homeBalance) homeBalance.textContent = fmtCurrency(wallet.cash);
+}
+
+// ---- ROUTER ----
+let _currentPage = 'home';
+function getCurrentPage() { return _currentPage; }
+
+function navigate(page) {
+  _currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById('page-'+page);
+  if (pageEl) pageEl.classList.add('active');
+  const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if (navEl) navEl.classList.add('active');
+
+  // Render page content
+  const renders = {
+    home: renderHomePage,
+    gold: renderGoldPage,
+    stocks: renderStocksPage,
+    portfolio: renderPortfolioPage,
+    admin: renderAdminPage,
+    security: renderSecurityPage
+  };
+  if (renders[page]) renders[page]();
+}
+
+// ---- TICKER ----
+function updateTicker() {
+  const stocks = Market.getAllStocks();
+  const goldPrice = Market.getGoldPrice();
+  const goldChange = Market.getGoldChange();
+  const items = [
+    { sym:'XAU/USD', price:'$'+fmt(goldPrice), chg:(goldChange>=0?'+':'')+fmt(goldChange)+'%', up:goldChange>=0 },
+    ...stocks.map(s => ({ sym:s.symbol, price:'$'+fmt(s.price), chg:(s.change>=0?'+':'')+s.change+'%', up:s.change>=0 }))
+  ];
+  const track = document.getElementById('ticker-track');
+  if (!track) return;
+  const html = [...items,...items].map(i => `<div class="ticker-item"><span class="ticker-sym">${i.sym}</span><span class="ticker-price">${i.price}</span><span class="ticker-chg ${i.up?'up':'dn'}">${i.chg}</span></div>`).join('');
+  track.innerHTML = html;
+}
+
+function updateSecurityBadge() {
+  const logs = DB.secLogs.all();
+  const unread = logs.filter(l => !l.read).length;
+  const badge = document.getElementById('security-badge');
+  if (badge) badge.textContent = unread;
+}
+
+// ---- HOME PAGE ----
+function renderHomePage() {
+  const user = Auth.currentUser;
+  if (!user) return;
+  const wallet = DB.wallets.get(user.id);
+  const goldPrice = Market.getGoldPrice();
+  const goldChange = Market.getGoldChange();
+  const stocks = Market.getAllStocks();
+
+  // Update balance
+  const balEl = document.getElementById('home-balance');
+  if (balEl) balEl.textContent = fmtCurrency(wallet.cash);
+
+  // Calculate portfolio total value
+  let stockValue = 0;
+  Object.entries(wallet.stocks).forEach(([sym,qty]) => {
+    const s = Market.getStock(sym);
+    if (s) stockValue += s.price * qty;
+  });
+  const goldValue = wallet.goldOz * goldPrice;
+  const totalValue = wallet.cash + goldValue + stockValue;
+
+  // Price cards
+  const cardsEl = document.getElementById('price-cards-grid');
+  if (cardsEl) {
+    const topStocks = stocks.slice(0, 3);
+    cardsEl.innerHTML = `
+      <div class="price-card">
+        <div class="price-asset-name">Gold XAU/USD</div>
+        <div class="price-value">${fmtCurrency(goldPrice)}</div>
+        <div class="price-change ${goldChange>=0?'pos':'neg'}">${goldChange>=0?'▲':'▼'} ${Math.abs(goldChange)}%</div>
+      </div>
+      ${topStocks.map(s => `
+      <div class="price-card" onclick="navigate('stocks')" style="cursor:pointer;">
+        <div class="price-asset-name">${s.symbol} · ${s.name.split(' ')[0]}</div>
+        <div class="price-value">${fmtCurrency(s.price)}</div>
+        <div class="price-change ${s.change>=0?'pos':'neg'}">${s.change>=0?'▲':'▼'} ${Math.abs(s.change)}%</div>
+      </div>`).join('')}
+    `;
+  }
+
+  // Gold chart
+  Charts.goldLine('goldChartHome', 30);
+
+  // Allocation chart
+  const allocValues = [];
+  const allocLabels = [];
+  const allocColors = ['#FFD700','#1456C8','#22C55E','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#EF4444'];
+  if (wallet.cash > 0) { allocLabels.push('Cash'); allocValues.push(wallet.cash); }
+  if (goldValue > 0) { allocLabels.push('Gold'); allocValues.push(Math.round(goldValue*100)/100); }
+  Object.entries(wallet.stocks).forEach(([sym,qty]) => {
+    const s = Market.getStock(sym);
+    if (s && qty > 0) { allocLabels.push(sym); allocValues.push(Math.round(s.price*qty*100)/100); }
+  });
+  if (allocValues.length > 0) Charts.donut('allocationChart', allocLabels, allocValues, allocColors.slice(0,allocValues.length));
+
+  // Top movers table
+  const moversEl = document.getElementById('home-stocks-table');
+  if (moversEl) {
+    const sorted = [...stocks].sort((a,b) => Math.abs(b.change)-Math.abs(a.change)).slice(0,6);
+    moversEl.innerHTML = `<table><thead><tr><th>Symbol</th><th>Price</th><th>Change</th><th>Volume</th></tr></thead><tbody>
+      ${sorted.map(s => `<tr>
+        <td><span style="font-family:'JetBrains Mono',monospace;color:var(--gold);">${s.symbol}</span><br><span style="font-size:11px;color:var(--text-muted);">${s.name.split(' ').slice(0,2).join(' ')}</span></td>
+        <td class="td-mono">${fmtCurrency(s.price)}</td>
+        <td><span class="${s.change>=0?'pnl-pos':'pnl-neg'}">${s.change>=0?'▲':'▼'} ${Math.abs(s.change)}%</span></td>
+        <td class="td-mono" style="color:var(--text-muted);">${fmt(Math.floor(Math.random()*9000000+1000000),0)}</td>
+      </tr>`).join('')}
+    </tbody></table>`;
+  }
+
+  // Recent transactions
+  const recentEl = document.getElementById('home-recent-tx');
+  if (recentEl) {
+    const txs = DB.tx.byUser(user.id).slice(0,5);
+    if (txs.length === 0) {
+      recentEl.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:14px;">No transactions yet. Start trading!</div>`;
+    } else {
+      recentEl.innerHTML = txs.map(t => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2);">
+          <div>
+            <span class="badge ${t.type.includes('BUY')?'badge-success':'badge-danger'}">${t.type.replace('_',' ')}</span>
+            <span style="margin-left:10px;font-family:'JetBrains Mono',monospace;font-size:13px;">${t.symbol}</span>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:14px;">${fmtCurrency(t.total)}</div>
+            <div style="font-size:11px;color:var(--text-muted);">${fmtTime(t.timestamp)}</div>
+          </div>
+        </div>`).join('');
+    }
+  }
+}
+
+// ---- GOLD PAGE ----
+function renderGoldPage() {
+  refreshGoldPage();
+  Charts.goldLine('goldChartMain', 30);
+}
+
+function refreshGoldPage() {
+  const user = Auth.currentUser;
+  if (!user) return;
+  const wallet = DB.wallets.get(user.id);
+  const goldPrice = Market.getGoldPrice();
+  const goldChange = Market.getGoldChange();
+
+  const priceEl = document.getElementById('gold-price-display');
+  if (priceEl) priceEl.textContent = fmtCurrency(goldPrice);
+  const chgEl = document.getElementById('gold-price-change');
+  if (chgEl) { chgEl.textContent = (goldChange>=0?'▲ +':' ▼ ')+Math.abs(goldChange)+'% today'; chgEl.className = 'price-change '+(goldChange>=0?'pos':'neg'); }
+
+  const holdQtyEl = document.getElementById('gold-holding-qty');
+  if (holdQtyEl) holdQtyEl.textContent = fmtOz(wallet.goldOz);
+  const holdValEl = document.getElementById('gold-holding-val');
+  if (holdValEl) holdValEl.textContent = fmtCurrency(wallet.goldOz * goldPrice);
+
+  // Gold transaction history
+  renderGoldTxTable();
+  updateGoldSummary();
+}
+
+function renderGoldTxTable() {
+  const user = Auth.currentUser;
+  const txs = DB.tx.byUser(user.id).filter(t => t.type.startsWith('GOLD'));
+  const el = document.getElementById('gold-tx-table');
+  if (!el) return;
+  if (txs.length === 0) {
+    el.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:32px;">No gold transactions yet.</div>`;
+    return;
+  }
+  el.innerHTML = `<table>
+    <thead><tr><th>Type</th><th>Amount</th><th>Price / oz</th><th>Total</th><th>Date</th><th>Status</th></tr></thead>
+    <tbody>${txs.map(t => `<tr>
+      <td><span class="badge ${t.type==='GOLD_BUY'?'badge-success':'badge-danger'}">${t.type.replace('_',' ')}</span></td>
+      <td class="td-mono">${fmtOz(t.qty)}</td>
+      <td class="td-mono">${fmtCurrency(t.price)}</td>
+      <td class="td-mono">${fmtCurrency(t.total)}</td>
+      <td style="font-size:13px;color:var(--text-muted);">${fmtTime(t.timestamp)}</td>
+      <td><span class="badge badge-success">✓ Complete</span></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function switchGoldTrade(mode) {
+  Trading.goldMode = mode;
+  document.getElementById('gold-buy-tab').classList.toggle('active', mode==='buy');
+  document.getElementById('gold-sell-tab').classList.toggle('active', mode==='sell');
+  const lbl = document.getElementById('gold-trade-action-label');
+  if (lbl) lbl.textContent = mode==='buy' ? 'Buy Amount (oz)' : 'Sell Amount (oz)';
+  const btn = document.getElementById('gold-trade-btn');
+  if (btn) { btn.textContent = mode==='buy' ? 'Buy Gold' : 'Sell Gold'; btn.className = mode==='buy' ? 'btn btn-buy' : 'btn btn-sell'; }
+  updateGoldSummary();
+}
+
+function updateGoldSummary() {
+  const amount = parseFloat(document.getElementById('gold-trade-amount')?.value || '0') || 0;
+  const price = Market.getGoldPrice();
+  const total = amount * price;
+  const wallet = DB.wallets.get(Auth.currentUser?.id || '');
+  const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setSafe('gold-sum-price', fmtCurrency(price));
+  setSafe('gold-sum-amount', amount > 0 ? fmtOz(amount) : '— oz');
+  setSafe('gold-sum-total', amount > 0 ? fmtCurrency(total) : '—');
+  setSafe('gold-sum-cash', fmtCurrency(wallet.cash));
+}
+
+function changeGoldChart(period, el) {
+  document.querySelectorAll('#page-home .chart-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
+  Charts.goldLine('goldChartHome', days);
+}
+
+function changeGoldMainChart(period, el) {
+  document.querySelectorAll('#page-gold .chart-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const days = period === '1d' ? 1 : period === '7d' ? 7 : period === '30d' ? 30 : 90;
+  Charts.goldLine('goldChartMain', days);
+}
+
+// ---- STOCKS PAGE ----
+function renderStocksPage() {
+  renderStockCards();
+  if (!Trading.selectedStock) {
+    Trading.selectedStock = 'AAPL';
+    selectStock('AAPL');
+  } else {
+    selectStock(Trading.selectedStock);
+  }
+}
+
+function renderStockCards() {
+  const stocks = Market.getAllStocks();
+  const el = document.getElementById('stock-cards-grid');
+  if (!el) return;
+  el.innerHTML = stocks.map(s => `
+    <div class="stock-card ${Trading.selectedStock===s.symbol?'selected':''}" onclick="selectStock('${s.symbol}')">
+      <div class="stock-header">
+        <div>
+          <div class="stock-sym">${s.symbol}</div>
+          <div class="stock-name">${s.name.split(' ').slice(0,2).join(' ')}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="stock-price">${fmtCurrency(s.price)}</div>
+          <div class="stock-chg ${s.change>=0?'pnl-pos':'pnl-neg'}">${s.change>=0?'▲':' ▼'} ${Math.abs(s.change)}%</div>
+        </div>
+      </div>
+      <div class="mini-chart"><canvas id="mini_${s.symbol}"></canvas></div>
+    </div>
+  `).join('');
+
+  // Draw mini sparklines
+  setTimeout(() => {
+    stocks.forEach(s => Charts.miniSparkline('mini_'+s.symbol, s.history.slice(-30), s.change>=0));
+  }, 50);
+}
+
+function selectStock(sym) {
+  Trading.selectedStock = sym;
+  const stock = Market.getStock(sym);
+  if (!stock) return;
+
+  document.getElementById('selected-stock-name').textContent = `${stock.symbol} · ${stock.name}`;
+  document.getElementById('selected-stock-price').textContent = fmtCurrency(stock.price);
+  const chgEl = document.getElementById('selected-stock-chg');
+  chgEl.textContent = (stock.change>=0?'▲ +':'▼ ')+Math.abs(stock.change)+'%';
+  chgEl.className = stock.change>=0 ? 'pnl-pos' : 'pnl-neg';
+  document.getElementById('trade-stock-label').textContent = stock.symbol;
+
+  Charts.stockLine('stockChartMain', sym, 90);
+  renderStockCards();
+  updateStockSummary();
+}
+
+function switchStockTrade(mode) {
+  Trading.stockMode = mode;
+  document.getElementById('stock-buy-tab').classList.toggle('active', mode==='buy');
+  document.getElementById('stock-sell-tab').classList.toggle('active', mode==='sell');
+  const btn = document.getElementById('stock-trade-btn');
+  if (btn) { btn.textContent = `${mode==='buy'?'Buy':'Sell'} ${Trading.selectedStock||'Stock'}`; btn.className = mode==='buy'?'btn btn-buy':'btn btn-sell'; }
+  updateStockSummary();
+}
+
+function updateStockSummary() {
+  if (!Auth.currentUser) return;
+  const shares = parseInt(document.getElementById('stock-trade-amount')?.value || '0') || 0;
+  const stock = Trading.selectedStock ? Market.getStock(Trading.selectedStock) : null;
+  const wallet = DB.wallets.get(Auth.currentUser.id);
+  const setSafe = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setSafe('stk-sum-sym', Trading.selectedStock || '—');
+  setSafe('stk-sum-price', stock ? fmtCurrency(stock.price) : '—');
+  setSafe('stk-sum-qty', shares > 0 ? shares + ' shares' : '—');
+  setSafe('stk-sum-total', (shares > 0 && stock) ? fmtCurrency(shares * stock.price) : '—');
+  setSafe('stk-sum-cash', fmtCurrency(wallet.cash));
+}
+
+// ---- PORTFOLIO PAGE ----
+function renderPortfolioPage() {
+  const user = Auth.currentUser;
+  if (!user) return;
+  const wallet = DB.wallets.get(user.id);
+  const goldPrice = Market.getGoldPrice();
+  const stocks = Market.getAllStocks();
+
+  // Calculate values
+  let stockValue = 0;
+  const stockHoldings = [];
+  Object.entries(wallet.stocks).forEach(([sym, qty]) => {
+    if (qty <= 0) return;
+    const s = stocks.find(s => s.symbol === sym);
+    if (!s) return;
+    const val = s.price * qty;
+    stockValue += val;
+    // Find avg buy price from transactions
+    const buys = DB.tx.byUser(user.id).filter(t => t.type==='STOCK_BUY' && t.symbol===sym);
+    const avgBuy = buys.length > 0 ? buys.reduce((s,t)=>s+t.price,0)/buys.length : s.price;
+    const pnl = (s.price - avgBuy) * qty;
+    const pnlPct = ((s.price - avgBuy) / avgBuy * 100);
+    stockHoldings.push({ sym, name:s.name, qty, price:s.price, value:val, avgBuy, pnl:Math.round(pnl*100)/100, pnlPct:Math.round(pnlPct*100)/100 });
+  });
+
+  const goldValue = wallet.goldOz * goldPrice;
+  const totalValue = wallet.cash + goldValue + stockValue;
+  const goldBuys = DB.tx.byUser(user.id).filter(t => t.type==='GOLD_BUY');
+  const avgGoldBuy = goldBuys.length > 0 ? goldBuys.reduce((s,t)=>s+t.price,0)/goldBuys.length : goldPrice;
+  const goldPnl = wallet.goldOz > 0 ? (goldPrice - avgGoldBuy) * wallet.goldOz : 0;
+
+  // Stats
+  const statsEl = document.getElementById('portfolio-stats');
+  if (statsEl) {
+    statsEl.innerHTML = [
+      { label:'Total Portfolio Value', val:fmtCurrency(totalValue), sub:'All assets combined', color:'var(--gold)' },
+      { label:'Cash Balance', val:fmtCurrency(wallet.cash), sub:'Available to trade', color:'var(--text)' },
+      { label:'Gold Holdings Value', val:fmtCurrency(goldValue), sub:fmtOz(wallet.goldOz)+' @ '+fmtCurrency(goldPrice), color:'var(--gold)' },
+      { label:'Stock Holdings Value', val:fmtCurrency(stockValue), sub:stockHoldings.length+' positions', color:'#22C55E' },
+    ].map(s => `<div class="card">
+      <div class="card-title">${s.label}</div>
+      <div class="card-value" style="color:${s.color};font-size:24px;">${s.val}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">${s.sub}</div>
+    </div>`).join('');
+  }
+
+  // Holdings pie
+  const allocValues = [];
+  const allocLabels = [];
+  const allocColors = ['#FFD700','#22C55E','#1456C8','#F59E0B','#8B5CF6','#EC4899','#06B6D4','#EF4444','#10B981'];
+  if (wallet.cash > 0) { allocLabels.push('Cash'); allocValues.push(wallet.cash); }
+  if (goldValue > 0) { allocLabels.push('Gold'); allocValues.push(Math.round(goldValue)); }
+  stockHoldings.forEach(h => { allocLabels.push(h.sym); allocValues.push(Math.round(h.value)); });
+  if (allocValues.length > 0) Charts.donut('holdingsPieChart', allocLabels, allocValues, allocColors.slice(0,allocValues.length));
+
+  // Portfolio value over time (simulate from transactions)
+  const txs = DB.tx.byUser(user.id).sort((a,b)=>a.timestamp-b.timestamp);
+  const valueHistory = [];
+  let runningCash = 10000;
+  const now = Date.now();
+  for (let i = 29; i >= 0; i--) {
+    const ts = now - i * 86400000;
+    valueHistory.push({ ts, value: runningCash + Math.random()*5000 + goldValue*0.95 + stockValue*0.95 });
+  }
+  valueHistory.push({ ts: now, value: totalValue });
+  if (document.getElementById('portfolioValueChart')) {
+    Charts.destroy('portfolioValueChart');
+    const ctx = document.getElementById('portfolioValueChart');
+    new Chart(ctx, {
+      type:'line',
+      data:{
+        labels: valueHistory.map(v => new Date(v.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'})),
+        datasets:[{ data: valueHistory.map(v=>v.value), fill:true, borderColor:'#FFD700', borderWidth:2, pointRadius:0, tension:0.4,
+          backgroundColor:ctx2=>{const g=ctx2.chart.ctx.createLinearGradient(0,0,0,ctx2.chart.height||220);g.addColorStop(0,'rgba(255,215,0,0.2)');g.addColorStop(1,'rgba(255,215,0,0)');return g;} }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:400},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtCurrency(c.raw)}`}}},
+        scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4A5E80',maxTicksLimit:6,font:{size:11}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#4A5E80',callback:v=>'$'+Math.round(v/1000)+'K',font:{size:11}}}}}
+    });
+  }
+
+  // Holdings table
+  const holdingsEl = document.getElementById('holdings-table');
+  if (holdingsEl) {
+    let rows = '';
+    if (wallet.goldOz > 0) {
+      rows += `<tr class="holding-row">
+        <td style="display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">🥇</span><div><div style="font-family:'JetBrains Mono',monospace;color:var(--gold);">XAU</div><div style="font-size:11px;color:var(--text-muted);">Gold Spot</div></div></td>
+        <td class="td-mono">${fmtOz(wallet.goldOz)}</td>
+        <td class="td-mono">${fmtCurrency(goldPrice)}</td>
+        <td class="td-mono">${fmtCurrency(avgGoldBuy)}</td>
+        <td class="td-mono">${fmtCurrency(goldValue)}</td>
+        <td><span class="${goldPnl>=0?'pnl-pos':'pnl-neg'}">${goldPnl>=0?'▲ +':'▼ '}${fmtCurrency(Math.abs(goldPnl))}</span></td>
+      </tr>`;
+    }
+    rows += stockHoldings.map(h => `<tr class="holding-row">
+      <td style="display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">📊</span><div><div style="font-family:'JetBrains Mono',monospace;color:var(--gold);">${h.sym}</div><div style="font-size:11px;color:var(--text-muted);">${h.name.split(' ').slice(0,2).join(' ')}</div></div></td>
+      <td class="td-mono">${h.qty} shares</td>
+      <td class="td-mono">${fmtCurrency(h.price)}</td>
+      <td class="td-mono">${fmtCurrency(h.avgBuy)}</td>
+      <td class="td-mono">${fmtCurrency(h.value)}</td>
+      <td><span class="${h.pnl>=0?'pnl-pos':'pnl-neg'}">${h.pnl>=0?'▲ +':'▼ '}${fmtCurrency(Math.abs(h.pnl))} (${h.pnl>=0?'+':''}${h.pnlPct}%)</span></td>
+    </tr>`).join('');
+
+    holdingsEl.innerHTML = rows ? `<table>
+      <thead><tr><th>Asset</th><th>Quantity</th><th>Current Price</th><th>Avg. Buy</th><th>Market Value</th><th>P&L</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>` : `<div style="text-align:center;color:var(--text-muted);padding:32px;">No holdings yet. Start trading!</div>`;
+  }
+
+  renderTransactionHistory();
+}
+
+function renderTransactionHistory() {
+  const user = Auth.currentUser;
+  if (!user) return;
+  const filter = document.getElementById('tx-filter')?.value || 'all';
+  let txs = DB.tx.byUser(user.id);
+  if (filter !== 'all') txs = txs.filter(t => t.type === filter);
+  const el = document.getElementById('tx-history-table');
+  if (!el) return;
+  if (txs.length === 0) { el.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:32px;">No transactions found.</div>`; return; }
+  el.innerHTML = `<table>
+    <thead><tr><th>Type</th><th>Asset</th><th>Qty</th><th>Price</th><th>Total</th><th>Date & Time</th><th>Status</th></tr></thead>
+    <tbody>${txs.map(t => `<tr>
+      <td><span class="badge ${t.type.includes('BUY')?'badge-success':'badge-danger'}">${t.type.replace('_',' ')}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;color:var(--gold);">${t.symbol}</td>
+      <td class="td-mono">${t.type.startsWith('GOLD') ? fmtOz(t.qty) : t.qty+' sh.'}</td>
+      <td class="td-mono">${fmtCurrency(t.price)}</td>
+      <td class="td-mono">${fmtCurrency(t.total)}</td>
+      <td style="font-size:13px;color:var(--text-muted);">${fmtTime(t.timestamp)}</td>
+      <td><span class="badge badge-success">✓ Complete</span></td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+// ---- ADMIN PAGE ----
+const Admin = {
+  createUser() {
+    const name = document.getElementById('modal-name').value.trim();
+    const username = document.getElementById('modal-username').value.trim();
+    const email = document.getElementById('modal-email').value.trim();
+    const password = document.getElementById('modal-password').value;
+    const role = document.getElementById('modal-role').value;
+    if (!name || !username || !email || !password) { toast('Fill all fields', 'warn'); return; }
+    if (DB.users.findByUsername(username)) { toast('Username taken', 'error'); return; }
+    const user = { id:'user_'+genId(), username, name, email, password:hashPassword(password), role, status:'active', createdAt:Date.now() };
+    DB.users.save(user);
+    DB.wallets.save({ userId:user.id, cash:10000, goldOz:0, stocks:{} });
+    document.getElementById('modal-create-user').style.display = 'none';
+    toast(`User ${username} created`, 'success');
+    renderAdminPage();
+  },
+  suspendUser(id) {
+    if (id === Auth.currentUser.id) { toast("Can't suspend yourself", 'warn'); return; }
+    const user = DB.users.find(id);
+    if (!user) return;
+    user.status = user.status === 'suspended' ? 'active' : 'suspended';
+    DB.users.save(user);
+    toast(`User ${user.username} ${user.status}`, 'info');
+    renderAdminPage();
+  },
+  unlockUser(id) {
+    const user = DB.users.find(id);
+    if (user) { DB.loginAttempts.unlock(user.username); toast(`${user.username} unlocked`, 'success'); }
+  }
+};
+
+function showCreateUserModal() {
+  document.getElementById('modal-create-user').style.display = 'flex';
+}
+
+function renderAdminPage() {
+  if (Auth.currentUser?.role !== 'admin') { toast('Admin access required', 'error'); return; }
+  const users = DB.users.all();
+  const txs = DB.tx.all();
+  const logs = DB.secLogs.all();
+
+  // Stats
+  const statsEl = document.getElementById('admin-stats');
+  if (statsEl) {
+    const totalVolume = txs.reduce((s,t)=>s+t.total,0);
+    const activeAlerts = logs.filter(l => l.severity==='CRITICAL'||l.severity==='HIGH').length;
+    statsEl.innerHTML = [
+      { icon:'👥', label:'Total Users', val:users.length },
+      { icon:'💳', label:'Total Transactions', val:txs.length },
+      { icon:'💰', label:'Total Volume', val:fmtCurrency(totalVolume) },
+      { icon:'🚨', label:'Active Alerts', val:activeAlerts },
+    ].map(s => `<div class="admin-stat">
+      <div class="admin-stat-icon">${s.icon}</div>
+      <div class="admin-stat-info"><div class="label">${s.label}</div><div class="value">${s.val}</div></div>
+    </div>`).join('');
+  }
+
+  // Volume chart (last 7 days)
+  const labels7 = [];
+  const volData = [];
+  const now = Date.now();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now - i*86400000);
+    labels7.push(d.toLocaleDateString('en-US',{weekday:'short'}));
+    const dayTxs = txs.filter(t => {
+      const td = new Date(t.timestamp);
+      return td.toDateString() === d.toDateString();
+    });
+    volData.push(dayTxs.reduce((s,t)=>s+t.total,0));
+  }
+  Charts.bar('adminVolumeChart', labels7, volData, 'Trading Volume', 'rgba(255,215,0,0.65)');
+
+  // Security chart
+  const logLabels7 = [];
+  const logData = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now - i*86400000);
+    logLabels7.push(d.toLocaleDateString('en-US',{weekday:'short'}));
+    logData.push(logs.filter(l => new Date(l.timestamp).toDateString() === d.toDateString()).length);
+  }
+  Charts.bar('adminSecurityChart', logLabels7, logData, 'Events', 'rgba(239,68,68,0.65)');
+
+  // User table
+  const tableEl = document.getElementById('admin-users-table');
+  if (tableEl) {
+    tableEl.innerHTML = `<table>
+      <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Balance</th><th>Actions</th></tr></thead>
+      <tbody>${users.map(u => {
+        const w = DB.wallets.get(u.id);
+        const stocks = Market.getAllStocks();
+        const sv = Object.entries(w.stocks||{}).reduce((s,[sym,qty])=>{ const st=stocks.find(s=>s.symbol===sym); return s+(st?st.price*qty:0); },0);
+        const total = w.cash + w.goldOz*Market.getGoldPrice() + sv;
+        return `<tr>
+          <td>${u.name}</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--gold);">${u.username}</td>
+          <td style="color:var(--text-muted);font-size:13px;">${u.email}</td>
+          <td><span class="badge ${u.role==='admin'?'badge-gold':'badge-info'}">${u.role}</span></td>
+          <td><span class="badge ${u.status==='active'?'badge-success':'badge-danger'}">${u.status||'active'}</span></td>
+          <td class="td-mono">${fmtCurrency(total)}</td>
+          <td style="display:flex;gap:8px;">
+            ${u.id!==Auth.currentUser.id ? `<button class="btn btn-sm ${u.status==='suspended'?'btn-outline':'btn-danger'}" onclick="Admin.suspendUser('${u.id}')">${u.status==='suspended'?'Activate':'Suspend'}</button>` : '<span style="color:var(--text-muted);font-size:12px;">Current user</span>'}
+          </td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>`;
+  }
+}
+
+// ---- SECURITY PAGE ----
+function renderSecurityPage() {
+  const logs = DB.secLogs.all();
+  const critCount = logs.filter(l=>l.severity==='CRITICAL').length;
+  const highCount = logs.filter(l=>l.severity==='HIGH').length;
+  const blockedCount = logs.filter(l=>l.blocked).length;
+
+  // Stats
+  const statsEl = document.getElementById('security-stats');
+  if (statsEl) {
+    statsEl.innerHTML = [
+      { icon:'🚨', label:'Total Attacks Detected', val:logs.length, color:'var(--danger)' },
+      { icon:'🛡️', label:'Attacks Blocked', val:blockedCount, color:'var(--success)' },
+      { icon:'⚠️', label:'Critical Severity', val:critCount, color:'#EF4444' },
+      { icon:'🔥', label:'High Severity', val:highCount, color:'var(--warn)' },
+    ].map(s => `<div class="card">
+      <div class="card-title">${s.icon} ${s.label}</div>
+      <div class="card-value" style="color:${s.color};font-size:32px;">${s.val}</div>
+    </div>`).join('');
+  }
+
+  Charts.pieAttackTypes('attackTypesChart');
+
+  // Threat meter
+  const threatEl = document.getElementById('threat-meter');
+  if (threatEl) {
+    const threatScore = Math.min(100, critCount*15 + highCount*8 + logs.length*2);
+    const level = threatScore > 70 ? 'CRITICAL' : threatScore > 40 ? 'HIGH' : threatScore > 20 ? 'MEDIUM' : 'LOW';
+    const colors = { CRITICAL:'var(--danger)', HIGH:'var(--warn)', MEDIUM:'#F59E0B', LOW:'var(--success)' };
+    threatEl.innerHTML = `
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-size:13px;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-muted);margin-bottom:8px;">Current Threat Level</div>
+        <div style="font-family:'Playfair Display',serif;font-size:36px;color:${colors[level]};">${level}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:14px;color:${colors[level]};margin-top:4px;">Score: ${threatScore}/100</div>
+      </div>
+      <div style="margin:0 16px;">
+        <div class="progress-bar" style="height:10px;">
+          <div class="progress-fill" style="width:${threatScore}%;background:${colors[level]};"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0 0;">
+        ${[['BRUTE_FORCE','🔑',logs.filter(l=>l.attackType==='BRUTE_FORCE').length],
+          ['PRICE_MANIP','💰',logs.filter(l=>l.attackType==='PRICE_MANIPULATION').length],
+          ['FAKE_PAYMENT','💳',logs.filter(l=>l.attackType==='FAKE_PAYMENT').length],
+          ['HIGH_FREQ','⚡',logs.filter(l=>l.attackType==='HIGH_FREQ').length]
+        ].map(([name,icon,cnt]) => `<div style="background:var(--bg-dark);border-radius:var(--radius-sm);padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:18px;">${icon}</span>
+          <div><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;">${name}</div><div style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--text);">${cnt}</div></div>
+        </div>`).join('')}
+      </div>`;
+  }
+
+  renderSecurityLogs();
+  // Mark logs as read
+  const allLogs = DB.secLogs.all().map(l=>({...l,read:true}));
+  DB.set('securityLogs', allLogs);
+  updateSecurityBadge();
+}
+
+function renderSecurityLogs() {
+  const filter = document.getElementById('sec-filter')?.value || 'all';
+  let logs = DB.secLogs.all();
+  if (filter !== 'all') logs = logs.filter(l => l.attackType === filter);
+  const el = document.getElementById('security-logs-container');
+  if (!el) return;
+  if (logs.length === 0) {
+    el.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:40px;">No security events found. System is clean! 🛡️</div>`;
+    return;
+  }
+  const sevColors = { CRITICAL:'#EF4444', HIGH:'#F59E0B', MEDIUM:'#60A5FA', LOW:'#22C55E' };
+  const attackIcons = { BRUTE_FORCE:'🔑', PRICE_MANIPULATION:'💰', FAKE_PAYMENT:'💳', HIGH_FREQ:'⚡', INSUFFICIENT_FUNDS:'💸', UNAUTH_TRADE:'🚫' };
+  el.innerHTML = logs.map(l => `
+    <div class="attack-card">
+      <div class="attack-icon">${attackIcons[l.attackType]||'⚠️'}</div>
+      <div class="attack-info">
+        <div class="attack-type">${l.attackType.replace(/_/g,' ')}</div>
+        <div class="attack-detail">${l.detail}</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-muted);">
+          👤 <span style="color:var(--text-dim);">${l.username||l.userId||'Unknown'}</span>
+          &nbsp;·&nbsp;
+          <span class="badge badge-${l.blocked?'success':'danger'}" style="font-size:10px;">${l.blocked?'✓ BLOCKED':'⚠ PASSED'}</span>
+          &nbsp;·&nbsp;
+          <span style="color:${sevColors[l.severity]||'#60A5FA'};">⬤ ${l.severity||'MEDIUM'}</span>
+        </div>
+        <div style="margin-top:6px;font-size:12px;background:rgba(0,0,0,0.2);padding:6px 10px;border-radius:4px;color:var(--text-muted);">
+          💡 <em>Recommended: ${l.recommendation}</em>
+        </div>
+      </div>
+      <div class="attack-meta">
+        <div class="time">${fmtTime(l.timestamp)}</div>
+        <div class="ip">${l.ip}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ============================================================
+   MODULE 11: INITIALIZATION
+   ============================================================ */
+function init() {
+  // Seed database on first run
+  seedDatabase();
+
+  // Try restoring session
+  if (Auth.restoreSession()) {
+    showApp();
+    navigate('home');
+  } else {
+    showAuthPage();
+  }
+
+  // Enter key support for login
+  document.getElementById('login-password')?.addEventListener('keydown', e => { if (e.key==='Enter') Auth.login(); });
+  document.getElementById('login-username')?.addEventListener('keydown', e => { if (e.key==='Enter') Auth.login(); });
+}
+
+// ---- Start the application ----
+document.addEventListener('DOMContentLoaded', init);
+
+</script>
+<script src="main.js"></script>
+</body>
+</html>
